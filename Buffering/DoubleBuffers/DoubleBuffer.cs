@@ -56,7 +56,7 @@ public class DoubleBuffer<T>
                 break;
             
             case DoubleBufferSwapEffect.Copy:
-                if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+                if (BufferingResource<T>.ResourceIsOrContainsReferences)
                     throw new Exception(
                         "Cannot do a copying swap effect when T is a reference or contains references");
 
