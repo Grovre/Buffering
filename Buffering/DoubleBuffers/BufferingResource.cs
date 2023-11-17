@@ -2,7 +2,7 @@
 
 public struct BufferingResource<T>
 {
-    public delegate void ResourceUpdater(out T rsc);
+    public delegate void ResourceUpdater(ref T rsc);
 
     private T _resource;
     public T Resource => _resource;
@@ -16,6 +16,6 @@ public struct BufferingResource<T>
 
     internal void UpdateResource()
     {
-        _updater(out _resource);
+        _updater(ref _resource);
     }
 }

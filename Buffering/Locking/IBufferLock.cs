@@ -6,6 +6,6 @@ namespace Buffering.Locking
     {
         internal LockHandle Lock(BufferAccessFlag flags = BufferAccessFlag.Generic);
 
-        internal void Unlock(LockHandle lhnd);
+        internal void Unlock(LockHandle hlock);
     }
 }

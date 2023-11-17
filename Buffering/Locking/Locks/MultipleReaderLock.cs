@@ -33,14 +33,14 @@ public class MultipleReaderLock : IBufferLock
         return new LockHandle(this, BufferAccessFlag.Write);
     }
 
-    public void Unlock(LockHandle lhnd)
+    public void Unlock(LockHandle hlock)
     {
-        if (lhnd.Owner != this)
+        if (hlock.Owner != this)
             throw new Exception("Lock handle not owned by lock queried for unlocking");
         
-        if ((lhnd.AccessFlag & BufferAccessFlag.Write) != 0)
+        if ((hlock.AccessFlags & BufferAccessFlag.Write) != 0)
             _lock.ExitWriteLock();
-        else if ((lhnd.AccessFlag & BufferAccessFlag.Read) != 0)
+        else if ((hlock.AccessFlags & BufferAccessFlag.Read) != 0)
             _lock.ExitReadLock();
         else
             throw new Exception("Lock must be a write or read lock");

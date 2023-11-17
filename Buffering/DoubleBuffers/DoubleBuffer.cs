@@ -20,9 +20,9 @@ public class DoubleBuffer<T>
     // Handle can be immediately disposed if T : struct
     public LockHandle ReadFrontBuffer(out T rsc)
     {
-        var lhnd = _lock.Lock(BufferAccessFlag.Read);
+        var hlock = _lock.Lock(BufferAccessFlag.Read);
         rsc = _resources[0].Resource;
-        return lhnd;
+        return hlock;
     }
 
     public void UpdateBackBuffer()
@@ -32,10 +32,10 @@ public class DoubleBuffer<T>
 
     public void SwapBuffers()
     {
-        var lhnd = _lock.Lock(BufferAccessFlag.Write);
+        var hlock = _lock.Lock(BufferAccessFlag.Write);
         var t = _resources[0];
         _resources[0] = _resources[1];
-        lhnd.Dispose();
+        hlock.Dispose();
         _resources[1] = t;
     }
 }

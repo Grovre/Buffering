@@ -5,12 +5,12 @@ namespace Buffering.Locking;
 public readonly ref struct LockHandle
 {
     internal IBufferLock Owner { get; }
-    public BufferAccessFlag AccessFlag { get; }
+    public BufferAccessFlag AccessFlags { get; }
 
-    internal LockHandle(IBufferLock owner, BufferAccessFlag accessFlag)
+    internal LockHandle(IBufferLock owner, BufferAccessFlag accessFlags)
     {
         Owner = owner;
-        AccessFlag = accessFlag;
+        AccessFlags = accessFlags;
     }
 
     public LockHandle()
