@@ -1,21 +1,27 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.ComTypes;
 using Buffering.Locking;
 
 namespace Buffering.DoubleBuffers;
 
 public class DoubleBuffer<T>
+    where T : struct
 {
     private BufferingResource<T>[] _resources = new BufferingResource<T>[2];
     private readonly IBufferLock _lock;
     private ResourceInfo _frontInfo;
+    private DoubleBufferSwapEffect _swapEffect;
 
     public DoubleBuffer(BufferingResource<T> rsc, DoubleBufferConfiguration? configuration = null)
     {
         configuration ??= DoubleBufferConfiguration.Default;
         _lock = configuration.LockImpl;
-        _resources[0] = rsc;
-        _resources[1] = rsc;
-        _frontInfo = new();
+        _resources[0] = new BufferingResource<T>(rsc);
+        _resources[1] = new BufferingResource<T>(rsc);
+        _frontInfo = default;
+        _swapEffect = configuration.SwapEffect;
     }
 
     // Handle can be immediately disposed if T : struct
@@ -35,12 +41,36 @@ public class DoubleBuffer<T>
     public void SwapBuffers()
     {
         var nextInfo = PrepareNextInfoOnSwap();
-        var hlock = _lock.Lock(BufferAccessFlag.Write);
-        var t = _resources[0];
-        _resources[0] = _resources[1];
-        _frontInfo = nextInfo;
-        hlock.Dispose(); // Quick release
-        _resources[1] = t;
+        ref var v0 = ref _resources[0];
+        ref var v1 = ref _resources[1];
+        
+        switch (_swapEffect)
+        {
+            case DoubleBufferSwapEffect.Flip:
+                var hlock1 = _lock.Lock(BufferAccessFlag.Write);
+                var t = v0;
+                v0 = v1;
+                _frontInfo = nextInfo;
+                hlock1.Dispose(); // Quick release
+                v1 = t;
+                break;
+            
+            case DoubleBufferSwapEffect.Copy:
+                if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+                    throw new Exception(
+                        "Cannot do a copying swap effect when T is a reference or contains references");
+
+                var hlock3 = _lock.Lock(BufferAccessFlag.Write);
+                v0.CopyFromResource(v1);
+                _frontInfo = nextInfo;
+                hlock3.Dispose();
+                break;
+            
+            default:
+                throw new Exception("Unsupported swap effect");
+        }
+        
+        Debug.Assert(!ReferenceEquals(_resources[0], _resources[1]));
     }
 
     private ResourceInfo PrepareNextInfoOnSwap()

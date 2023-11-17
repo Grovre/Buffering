@@ -4,5 +4,4 @@ public enum DoubleBufferSwapEffect
 {
     Flip,
     Copy,
-    Discard
 }

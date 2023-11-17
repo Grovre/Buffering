@@ -2,17 +2,13 @@
 
 public readonly record struct ResourceInfo
 {
-    public uint Id { get; }
+    public uint Id { get; } = 0;
     public bool FromBuffer { get; } = false;
-
-    public ResourceInfo()
-    {
-        Id = 0;
-    }
 
     public ResourceInfo(uint id)
     {
         Id = id;
+        FromBuffer = false;
     }
 
     public ResourceInfo(uint id, bool fromBuffer)

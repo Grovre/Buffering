@@ -6,11 +6,11 @@ using Buffering.Locking.Locks;
 
 Console.WriteLine("Bruh");
 
-var db = new DoubleBuffer<long>(
-    new BufferingResource<long>(
-        0L,
-        (ref long rsc) => rsc += 1),
-    new DoubleBufferConfiguration(new MonitorLock()));
+var db = new DoubleBuffer<Vector3>(
+    new BufferingResource<Vector3>(
+        () => Vector3.Zero,
+        (ref Vector3 rsc) => rsc = new Vector3(rsc.X + 1F)),
+    new DoubleBufferConfiguration(new MonitorLock(), DoubleBufferSwapEffect.Flip));
 var cts = new CancellationTokenSource(10_000);
 
 var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).StartNew(() =>

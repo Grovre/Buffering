@@ -6,12 +6,14 @@ namespace Buffering.DoubleBuffers;
 public class DoubleBufferConfiguration
 {
     public static DoubleBufferConfiguration Default
-        => new(new MultipleReaderLock());
+        => new(new MultipleReaderLock(), DoubleBufferSwapEffect.Flip);
     
-    public IBufferLock LockImpl { get; set; }
+    public IBufferLock LockImpl { get; }
+    public DoubleBufferSwapEffect SwapEffect { get; }
 
-    public DoubleBufferConfiguration(IBufferLock lockImpl)
+    public DoubleBufferConfiguration(IBufferLock lockImpl, DoubleBufferSwapEffect swapEffect)
     {
         LockImpl = lockImpl;
+        SwapEffect = swapEffect;
     }
 }
