@@ -9,7 +9,9 @@ namespace Buffering.DoubleBuffers;
 public class DoubleBuffer<T>
     where T : struct
 {
-    private BufferingResource<T>[] _resources = new BufferingResource<T>[2];
+    // originally from array but remove extra pointer deref
+    private BufferingResource<T> _rsc0; // front
+    private BufferingResource<T> _rsc1; // back
     private readonly IBufferLock _lock;
     private ResourceInfo _frontInfo;
     private DoubleBufferSwapEffect _swapEffect;
@@ -18,8 +20,8 @@ public class DoubleBuffer<T>
     {
         configuration ??= DoubleBufferConfiguration.Default;
         _lock = configuration.LockImpl;
-        _resources[0] = new BufferingResource<T>(rsc);
-        _resources[1] = new BufferingResource<T>(rsc);
+        _rsc0 = new BufferingResource<T>(rsc);
+        _rsc1 = new BufferingResource<T>(rsc);
         _frontInfo = default;
         _swapEffect = configuration.SwapEffect;
     }
@@ -28,31 +30,29 @@ public class DoubleBuffer<T>
     public LockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
     {
         var hlock = _lock.Lock(BufferAccessFlag.Read);
-        rsc = _resources[0].Resource;
+        rsc = _rsc0.Resource;
         info = _frontInfo;
         return hlock;
     }
 
     public void UpdateBackBuffer()
     {
-        _resources[1].UpdateResource();
+        _rsc1.UpdateResource();
     }
     
     public void SwapBuffers()
     {
         var nextInfo = PrepareNextInfoOnSwap();
-        ref var v0 = ref _resources[0];
-        ref var v1 = ref _resources[1];
-        
+
         switch (_swapEffect)
         {
             case DoubleBufferSwapEffect.Flip:
                 var hlock1 = _lock.Lock(BufferAccessFlag.Write);
-                var t = v0;
-                v0 = v1;
+                var t = _rsc0;
+                _rsc0 = _rsc1;
                 _frontInfo = nextInfo;
                 hlock1.Dispose(); // Quick release
-                v1 = t;
+                _rsc1 = t;
                 break;
             
             case DoubleBufferSwapEffect.Copy:
@@ -61,7 +61,7 @@ public class DoubleBuffer<T>
                         "Cannot do a copying swap effect when T is a reference or contains references");
 
                 var hlock3 = _lock.Lock(BufferAccessFlag.Write);
-                v0.CopyFromResource(v1);
+                _rsc0.CopyFromResource(_rsc1);
                 _frontInfo = nextInfo;
                 hlock3.Dispose();
                 break;
@@ -70,7 +70,7 @@ public class DoubleBuffer<T>
                 throw new Exception("Unsupported swap effect");
         }
         
-        Debug.Assert(!ReferenceEquals(_resources[0], _resources[1]));
+        Debug.Assert(!ReferenceEquals(_rsc0, _rsc1));
     }
 
     private ResourceInfo PrepareNextInfoOnSwap()
