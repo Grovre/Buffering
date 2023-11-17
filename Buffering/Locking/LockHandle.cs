@@ -2,7 +2,7 @@
 
 namespace Buffering.Locking;
 
-public ref struct LockHandle
+public readonly ref struct LockHandle
 {
     internal IBufferLock Owner { get; }
     public BufferAccessFlag AccessFlag { get; }
@@ -18,7 +18,7 @@ public ref struct LockHandle
         // TODO: NoLock
     }
 
-    public readonly void Dispose()
+    public void Dispose()
     {
         Owner.Unlock(this);
     }

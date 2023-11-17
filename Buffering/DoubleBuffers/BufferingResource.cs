@@ -1,22 +1,17 @@
 ﻿namespace Buffering.DoubleBuffers;
 
 public struct BufferingResource<T>
-    where T : struct
 {
     public delegate void ResourceUpdater(out T rsc);
 
     private T _resource;
-    public T Resource { get; }
+    public T Resource => _resource;
     private readonly ResourceUpdater _updater;
 
-    public BufferingResource(ResourceUpdater updater)
+    public BufferingResource(T init, ResourceUpdater updater)
     {
+        _resource = init;
         _updater = updater;
-    }
-
-    public BufferingResource()
-    {
-        _updater = (out T rsc) => rsc = default;
     }
 
     internal void UpdateResource()
