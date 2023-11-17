@@ -1,9 +1,17 @@
-﻿using DasMulli.DataBuilderGenerator;
+﻿using Buffering.Locking;
+using Buffering.Locking.Locks;
 
 namespace Buffering.DoubleBuffers;
 
-[GenerateDataBuilder]
 public class DoubleBufferConfiguration
 {
-    
+    public static DoubleBufferConfiguration Default
+        => new DoubleBufferConfiguration(
+            new MultipleReaderLock());
+    public IBufferLock LockImpl { get; set; }
+
+    public DoubleBufferConfiguration(IBufferLock lockImpl)
+    {
+        LockImpl = lockImpl;
+    }
 }

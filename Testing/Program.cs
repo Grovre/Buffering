@@ -1,15 +1,17 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Numerics;
-using System.Text;
-using System.Threading.Channels;
 using Buffering.DoubleBuffers;
+using Buffering.Locking.Locks;
 
 Console.WriteLine("Bruh");
 
 var i = 0;
-var j = 0;
-var db = new DoubleBuffer<Vector3>(new BufferingResource<Vector3>(Vector3.Zero, (ref Vector3 rsc) => rsc += Vector3.One));
+var db = new DoubleBuffer<Vector3>(
+    new BufferingResource<Vector3>(
+        Vector3.Zero,
+        (ref Vector3 rsc) => rsc = new Vector3(i)),
+    new DoubleBufferConfiguration(new MonitorLock()));
 var cts = new CancellationTokenSource(10_000);
 
 var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).StartNew(() =>
@@ -19,11 +21,12 @@ var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).Start
     {
         db.UpdateBackBuffer();
         db.SwapBuffers();
+        i++;
     }
 });
 
 while (!bufferUpdateTask.IsCompleted)
 {
     db.ReadFrontBuffer(out var v3).Dispose();
-    Console.WriteLine($"{i++} ({j}): {v3}");
+    Console.WriteLine($"{i}: {v3}");
 }

@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace Buffering.Locking;
+﻿namespace Buffering.Locking;
 
 public readonly ref struct LockHandle
 {

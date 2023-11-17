@@ -1,20 +1,18 @@
-﻿using System.Runtime.CompilerServices;
-using Buffering.Locking;
-using Buffering.Locking.Locks;
+﻿using Buffering.Locking;
 
 namespace Buffering.DoubleBuffers;
 
 public class DoubleBuffer<T>
 {
     private BufferingResource<T>[] _resources = new BufferingResource<T>[2];
-    private IBufferLock _lock;
+    private readonly IBufferLock _lock;
 
     public DoubleBuffer(BufferingResource<T> rsc, DoubleBufferConfiguration? configuration = null)
     {
-        configuration ??= new DoubleBufferConfiguration();
+        configuration ??= DoubleBufferConfiguration.Default;
+        _lock = configuration.LockImpl;
         _resources[0] = rsc;
         _resources[1] = rsc;
-        _lock = new MultipleReaderLock();
     }
 
     // Handle can be immediately disposed if T : struct
@@ -35,7 +33,7 @@ public class DoubleBuffer<T>
         var hlock = _lock.Lock(BufferAccessFlag.Write);
         var t = _resources[0];
         _resources[0] = _resources[1];
-        hlock.Dispose();
+        hlock.Dispose(); // Quick release
         _resources[1] = t;
     }
 }

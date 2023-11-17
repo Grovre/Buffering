@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace Buffering.Locking.Locks;
+﻿namespace Buffering.Locking.Locks;
 
 public class MultipleReaderLock : IBufferLock
 {
@@ -36,7 +34,7 @@ public class MultipleReaderLock : IBufferLock
     public void Unlock(LockHandle hlock)
     {
         if (hlock.Owner != this)
-            throw new Exception("Lock handle not owned by lock queried for unlocking");
+            throw new Exception(IBufferLock.BadOwnerExceptionMessage);
         
         if ((hlock.AccessFlags & BufferAccessFlag.Write) != 0)
             _lock.ExitWriteLock();
