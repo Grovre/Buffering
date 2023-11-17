@@ -4,12 +4,7 @@ namespace Buffering.Locking.Locks;
 
 public class MultipleReaderLock : IBufferLock
 {
-    private ReaderWriterLockSlim _lock;
-
-    public MultipleReaderLock()
-    {
-        _lock = new();
-    }
+    private readonly ReaderWriterLockSlim _lock = new();
 
     public LockHandle Lock(BufferAccessFlag flags = BufferAccessFlag.Generic)
     {
