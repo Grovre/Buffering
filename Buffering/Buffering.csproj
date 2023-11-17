@@ -6,6 +6,14 @@
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>0.1.0</Version>
+        <Title>Buffering</Title>
+        <Description>Efficiently streamlined buffering functionality for any system</Description>
+        <Copyright>MIT</Copyright>
+        <RepositoryUrl>https://github.com/Grovre/Buffering</RepositoryUrl>
+        <RepositoryType>Github</RepositoryType>
     </PropertyGroup>
 
 </Project>
