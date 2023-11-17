@@ -1,5 +1,8 @@
 ﻿namespace Buffering.Locking.Locks;
 
+/// <summary>
+/// Like monitor but keeps the CPU spinning for the next possible entry
+/// </summary>
 public class SpinnerLock : IBufferLock
 {
     private SpinLock _lock = new(false);

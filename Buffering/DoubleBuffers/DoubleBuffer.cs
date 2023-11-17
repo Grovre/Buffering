@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.ComTypes;
 using Buffering.Locking;
 
 namespace Buffering.DoubleBuffers;
 
+/// <summary>
+/// A double buffer
+/// </summary>
+/// <typeparam name="T">Value type in the buffer</typeparam>
 public class DoubleBuffer<T>
     where T : struct
 {
@@ -14,9 +15,14 @@ public class DoubleBuffer<T>
     private BufferingResource<T> _rsc1; // back
     private readonly IBufferLock _lock;
     private ResourceInfo _frontInfo;
-    private DoubleBufferSwapEffect _swapEffect;
+    private readonly DoubleBufferSwapEffect _swapEffect;
 
-    public DoubleBuffer(BufferingResource<T> rsc, DoubleBufferConfiguration? configuration = null)
+    /// <summary>
+    /// Constructs the double buffer accordingly.
+    /// </summary>
+    /// <param name="rsc">Copied to the two buffers to avoid issues with resource objects referencing the same existing object</param>
+    /// <param name="configuration">Sets up how the double buffer will run. If null, uses default configuration</param>
+    public DoubleBuffer(in BufferingResource<T> rsc, DoubleBufferConfiguration? configuration = null)
     {
         configuration ??= DoubleBufferConfiguration.Default;
         _lock = configuration.LockImpl;
@@ -25,8 +31,14 @@ public class DoubleBuffer<T>
         _frontInfo = default;
         _swapEffect = configuration.SwapEffect;
     }
-
-    // Handle can be immediately disposed if T : struct
+    
+    /// <summary>
+    /// Locks the front buffer and reads it.
+    /// The lock should be immediately disposed of in the same statement if T is a struct and contains no references
+    /// </summary>
+    /// <param name="rsc">Ref variable to read the buffer to</param>
+    /// <param name="info">Minimal information about the current front buffer object</param>
+    /// <returns>LockHandle to be disposed of immediately after reading/writing the buffer. This should be done ASAP</returns>
     public LockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
     {
         var hlock = _lock.Lock(BufferAccessFlag.Read);
@@ -35,11 +47,26 @@ public class DoubleBuffer<T>
         return hlock;
     }
 
+    // TODO: DoubleBuffer updater class
+    /// <summary>
+    /// Updates the back buffer by updating the resource.
+    /// Should be called before swapping the buffers and on a dedicated back buffer thread
+    /// to maximize throughput.
+    /// The back buffer IS NOT THREADSAFE. No locking or synchronization is done.
+    /// </summary>
     public void UpdateBackBuffer()
     {
         _rsc1.UpdateResource();
     }
     
+    /// <summary>
+    /// Swaps the buffers with functionality according to the configured swap effect (default is flip).
+    /// Should be called after updating the back buffer.
+    /// All reads immediately after every swap are on the correct resource in the front buffer.
+    /// The back buffer IS NOT THREADSAFE. No locking or synchronization is done. Must be called on a dedicated back buffer update thread.
+    /// This maximizes throughput anyways.
+    /// </summary>
+    /// <exception cref="Exception">Unknown/unsupported swap effect</exception>
     public void SwapBuffers()
     {
         var nextInfo = PrepareNextInfoOnSwap();
@@ -56,14 +83,10 @@ public class DoubleBuffer<T>
                 break;
             
             case DoubleBufferSwapEffect.Copy:
-                if (BufferingResource<T>.ResourceIsOrContainsReferences)
-                    throw new Exception(
-                        "Cannot do a copying swap effect when T is a reference or contains references");
-
-                var hlock3 = _lock.Lock(BufferAccessFlag.Write);
+                var hlock2 = _lock.Lock(BufferAccessFlag.Write);
                 _rsc0.CopyFromResource(_rsc1);
                 _frontInfo = nextInfo;
-                hlock3.Dispose();
+                hlock2.Dispose();
                 break;
             
             default:

@@ -1,5 +1,10 @@
 ﻿namespace Buffering.Locking.Locks;
 
+/// <summary>
+/// Uses a ReaderWriterLockSlim in order to synchronize access to a buffer.
+/// Best use case is when multiple reader threads are involved.
+/// Access flags must not be generic. They must be read or write.
+/// </summary>
 public class MultipleReaderLock : IBufferLock
 {
     private readonly ReaderWriterLockSlim _lock = new();

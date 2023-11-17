@@ -2,19 +2,41 @@
 
 namespace Buffering.DoubleBuffers;
 
+/// <summary>
+/// An object representing a resource object in a buffer
+/// </summary>
+/// <typeparam name="T">Value type of resource object</typeparam>
 public class BufferingResource<T>
     where T : struct
 {
-    public delegate void ResourceUpdater(ref T rsc);
+    /// <summary>
+    /// The functionality for updating the resource.
+    /// Includes a boolean for determining whether the resource was updated by a previous call from the resource updater or not
+    /// </summary>
+    public delegate void ResourceUpdater(ref T rsc, bool fromUpdater);
 
+    /// <summary>
+    /// If the resource type is or contains reference type member variables, this is true
+    /// </summary>
     public static readonly bool ResourceIsOrContainsReferences = RuntimeHelpers.IsReferenceOrContainsReferences<T>();
 
     private T _resource;
+    /// <summary>
+    /// Whether or not the resource object has been through the updater
+    /// </summary>
     public bool IsResourceFromUpdater { get; private set; }
+    /// <summary>
+    /// The object represented by this resource
+    /// </summary>
     public T Resource => _resource;
     private readonly ResourceUpdater _updater;
     private readonly Func<T> _init;
 
+    /// <summary>
+    /// Normal constructor. Resource is initialized to what init returns and IsResourceFromUpdater is initialized to false.
+    /// </summary>
+    /// <param name="init">Initial value for the resource</param>
+    /// <param name="updater">Resource object updater</param>
     public BufferingResource(Func<T> init, ResourceUpdater updater)
     {
         IsResourceFromUpdater = false;
@@ -23,6 +45,12 @@ public class BufferingResource<T>
         _updater = updater;
     }
 
+    /// <summary>
+    /// Copy constructor.
+    /// The resource's object is initialized to what init will return,
+    /// not be assigned to the other's resource object
+    /// </summary>
+    /// <param name="other">Resource to copy from</param>
     public BufferingResource(BufferingResource<T> other)
     {
         IsResourceFromUpdater = false;
@@ -31,9 +59,13 @@ public class BufferingResource<T>
         _updater = other._updater;
     }
 
-    internal void UpdateResource()
+    /// <summary>
+    /// Uses the updater to update the resource object.
+    /// IsResourceFromUpdater becomes true.
+    /// </summary>
+    public void UpdateResource()
     {
-        _updater(ref _resource);
+        _updater(ref _resource, IsResourceFromUpdater);
         IsResourceFromUpdater = true;
     }
 
@@ -43,17 +75,8 @@ public class BufferingResource<T>
         _resource = _init();
     }
 
-    // NOTE: Structs implementing ICloneable with member reference variables WILL BE BOXED
     internal void CopyFromResource(BufferingResource<T> other)
     {
-        if (ResourceIsOrContainsReferences)
-        {
-            if (other._resource is not ICloneable cloneableRsc)
-                throw new Exception("Cannot clone type that is a reference or contains references without ICloneable");
-
-            _resource = (T)cloneableRsc.Clone();
-        }
-        
         _resource = other._resource;
     }
 }
