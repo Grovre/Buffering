@@ -4,9 +4,7 @@ namespace Buffering.Locking
 {
     public interface IBufferLock
     {
-        internal static Stack<LockHandle> HandleStackPool = new();
-        
-        LockHandle Lock(Accessor accessor = 0);
+        internal LockHandle Lock(BufferAccessFlag flags = BufferAccessFlag.Generic);
 
         internal void Unlock(LockHandle lhnd);
     }
