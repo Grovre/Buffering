@@ -7,10 +7,12 @@ using Buffering.Locking.Locks;
 Console.WriteLine("Bruh");
 
 var db = new DoubleBuffer<Vector3>(
-    new BufferingResource<Vector3>(
-        () => Vector3.Zero,
-        (ref Vector3 rsc, bool _) => rsc = new Vector3(rsc.X + 1F)),
-    new DoubleBufferConfiguration(new MonitorLock(), DoubleBufferSwapEffect.Flip));
+    rsc: new BufferingResource<Vector3>(
+        init: () => Vector3.Zero,
+        updater: (ref Vector3 rsc, bool _) => rsc = new Vector3(rsc.X + 1F)),
+    configuration: new DoubleBufferConfiguration(
+        lockImpl: new MonitorLock(),
+        swapEffect: DoubleBufferSwapEffect.Flip));
 
 var cts = new CancellationTokenSource(10_000);
 
