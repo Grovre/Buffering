@@ -6,11 +6,10 @@ using Buffering.Locking.Locks;
 
 Console.WriteLine("Bruh");
 
-var i = 0;
-var db = new DoubleBuffer<Vector3>(
-    new BufferingResource<Vector3>(
-        Vector3.Zero,
-        (ref Vector3 rsc) => rsc = new Vector3(i)),
+var db = new DoubleBuffer<long>(
+    new BufferingResource<long>(
+        0L,
+        (ref long rsc) => rsc += 1),
     new DoubleBufferConfiguration(new MonitorLock()));
 var cts = new CancellationTokenSource(10_000);
 
@@ -21,12 +20,11 @@ var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).Start
     {
         db.UpdateBackBuffer();
         db.SwapBuffers();
-        i++;
     }
 });
 
 while (!bufferUpdateTask.IsCompleted)
 {
-    db.ReadFrontBuffer(out var v3, out var rscInfo).Dispose();
-    Console.WriteLine($"{i:N0}: {v3} : {rscInfo}");
+    db.ReadFrontBuffer(out var rsc, out var rscInfo).Dispose();
+    Console.WriteLine($"{rscInfo.Id:N0}: {rsc} : {rscInfo}");
 }

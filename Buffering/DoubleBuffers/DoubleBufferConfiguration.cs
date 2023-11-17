@@ -6,8 +6,8 @@ namespace Buffering.DoubleBuffers;
 public class DoubleBufferConfiguration
 {
     public static DoubleBufferConfiguration Default
-        => new DoubleBufferConfiguration(
-            new MultipleReaderLock());
+        => new(new MultipleReaderLock());
+    
     public IBufferLock LockImpl { get; set; }
 
     public DoubleBufferConfiguration(IBufferLock lockImpl)

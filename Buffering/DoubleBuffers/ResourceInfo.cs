@@ -2,20 +2,20 @@
 
 public readonly record struct ResourceInfo
 {
-    public byte Id { get; }
-    public byte FromBuffer { get; } = 0;
+    public uint Id { get; }
+    public bool FromBuffer { get; } = false;
 
     public ResourceInfo()
     {
         Id = 0;
     }
 
-    public ResourceInfo(byte id)
+    public ResourceInfo(uint id)
     {
         Id = id;
     }
 
-    public ResourceInfo(byte id, byte fromBuffer)
+    public ResourceInfo(uint id, bool fromBuffer)
     {
         Id = id;
         FromBuffer = fromBuffer;

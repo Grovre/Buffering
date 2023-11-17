@@ -45,9 +45,9 @@ public class DoubleBuffer<T>
 
     private ResourceInfo PrepareNextInfoOnSwap()
     {
-        var id = _frontInfo.Id;
-        id += 1;
+        const bool fromBuffer = true;
+        var id = unchecked(_frontInfo.Id + 1);
         
-        return new ResourceInfo(id, byte.MaxValue);
+        return new ResourceInfo(id, fromBuffer);
     }
 }
