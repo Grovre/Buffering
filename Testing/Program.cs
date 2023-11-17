@@ -27,6 +27,6 @@ var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).Start
 
 while (!bufferUpdateTask.IsCompleted)
 {
-    db.ReadFrontBuffer(out var v3).Dispose();
-    Console.WriteLine($"{i}: {v3}");
+    db.ReadFrontBuffer(out var v3, out var rscInfo).Dispose();
+    Console.WriteLine($"{i:N0}: {v3} : {rscInfo}");
 }
