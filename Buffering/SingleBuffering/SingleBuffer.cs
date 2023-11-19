@@ -4,14 +4,14 @@ using Buffering.Locking;
 
 namespace Buffering.SingleBuffering;
 
-public class SingleBuffer<T>
+public class SingleBuffer<T, TUpdaterState>
     where T : struct
 {
-    private readonly BufferResource<T> _rsc;
+    private readonly BufferResource<T, TUpdaterState> _rsc;
     private BufferedResourceInfo _info;
     private readonly SingleBufferConfiguration _config;
 
-    public SingleBuffer(BufferResource<T> rsc, SingleBufferConfiguration? config = null)
+    public SingleBuffer(BufferResource<T, TUpdaterState> rsc, SingleBufferConfiguration? config = null)
     {
         config ??= new SingleBufferConfiguration();
         _rsc = new(rsc);
@@ -27,9 +27,10 @@ public class SingleBuffer<T>
         return hlock;
     }
 
-    public void UpdateBuffer()
+    public void UpdateBuffer(TUpdaterState state)
     {
         using var hlock = _rsc.Lock(ResourceAccessFlag.Read);
+        _rsc.UpdaterState = state;
         _rsc.UpdateResource();
         _info = BufferedResourceInfo.PrepareNextInfo(_info, true);
     }

@@ -8,28 +8,28 @@ namespace Buffering.DoubleBuffering;
 /// A double buffer
 /// </summary>
 /// <typeparam name="T">Value type in the buffer</typeparam>
-public class DoubleBuffer<T>
+public class DoubleBuffer<T, TUpdaterState>
     where T : struct
 {
     // originally from array but remove extra pointer deref
-    private BufferResource<T> _rsc0; // front
-    private BufferResource<T> _rsc1; // back
+    private BufferResource<T, TUpdaterState> _rsc0; // front
+    private BufferResource<T, TUpdaterState> _rsc1; // back
     private BufferedResourceInfo _frontInfo;
     private readonly DoubleBufferConfiguration _config;
 
-    public DoubleBufferFrontReader<T> FrontReader => new(this);
-    public DoubleBufferBackController<T> BackController => new(this);
+    public DoubleBufferFrontReader<T, TUpdaterState> FrontReader => new(this);
+    public DoubleBufferBackController<T, TUpdaterState> BackController => new(this);
 
     /// <summary>
     /// Constructs the double buffer accordingly.
     /// </summary>
     /// <param name="rsc">Copied to the two buffers to avoid issues with resource objects referencing the same existing object</param>
     /// <param name="configuration">Sets up how the double buffer will run. If null, uses default configuration</param>
-    public DoubleBuffer(in BufferResource<T> rsc, DoubleBufferConfiguration? configuration = null)
+    public DoubleBuffer(in BufferResource<T, TUpdaterState> rsc, DoubleBufferConfiguration? configuration = null)
     {
         _config = configuration ?? DoubleBufferConfiguration.Default;
-        _rsc0 = new BufferResource<T>(rsc);
-        _rsc1 = new BufferResource<T>(rsc);
+        _rsc0 = new BufferResource<T, TUpdaterState>(rsc);
+        _rsc1 = new BufferResource<T, TUpdaterState>(rsc);
         _frontInfo = default;
     }
     
@@ -54,8 +54,9 @@ public class DoubleBuffer<T>
     /// to maximize throughput.
     /// The back buffer IS NOT THREADSAFE. No locking or synchronization is done.
     /// </summary>
-    internal void UpdateBackBuffer()
+    internal void UpdateBackBuffer(TUpdaterState state)
     {
+        _rsc1.UpdaterState = state;
         _rsc1.UpdateResource();
     }
     

@@ -7,17 +7,17 @@ namespace Buffering.DoubleBuffering;
 /// Used to read the front buffer of a double buffer
 /// </summary>
 /// <typeparam name="T">The type in the double buffer</typeparam>
-public readonly struct DoubleBufferFrontReader<T>
+public readonly struct DoubleBufferFrontReader<T, TUpdaterState>
     where T : struct
 {
-    public DoubleBuffer<T> DoubleBuffer { get; }
+    public DoubleBuffer<T, TUpdaterState> DoubleBuffer { get; }
 
     /// <summary>
     /// Should be used to retrieve a double buffer,
     /// preferably through the double buffer itself
     /// </summary>
     /// <param name="doubleBuffer">DoubleBuffer to control</param>
-    public DoubleBufferFrontReader(DoubleBuffer<T> doubleBuffer)
+    public DoubleBufferFrontReader(DoubleBuffer<T, TUpdaterState> doubleBuffer)
     {
         DoubleBuffer = doubleBuffer;
     }

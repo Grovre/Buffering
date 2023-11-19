@@ -6,11 +6,11 @@ using Buffering.BufferResources;
 using Buffering.DoubleBuffering;
 using Buffering.Locking.Locks;
 
-var db = new DoubleBuffer<Vector3>(
-    rsc: new BufferResource<Vector3>(
-        new BufferResourceConfiguration<Vector3>(
-            (out Vector3 v3) => v3 = default,
-            (ref Vector3 rsc, bool _, object? _) => rsc = new Vector3(rsc.X + 1),
+var db = new DoubleBuffer<Vector3, Vector3>(
+    rsc: new BufferResource<Vector3, Vector3>(
+        configuration: new BufferResourceConfiguration<Vector3, Vector3>(
+            init: (out Vector3 v3) => v3 = default,
+            updater: (ref Vector3 rsc, bool _, Vector3 state) => rsc += state,
             new MonitorLock())),
     configuration: new DoubleBufferConfiguration(
         swapEffect: DoubleBufferSwapEffect.Flip));
@@ -23,7 +23,7 @@ var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).Start
     var controller = db.BackController;
     while (!token.IsCancellationRequested)
     {
-        controller.UpdateBackBuffer();
+        controller.UpdateBackBuffer(state: Vector3.One);
         controller.SwapBuffers();
     }
 });

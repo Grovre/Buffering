@@ -5,9 +5,9 @@ using Buffering.Locking.Locks;
 using Buffering.SingleBuffering;
 using SingleBufferingExample;
 
-var buffer = new SingleBuffer<BufferValues>(
-    new BufferResource<BufferValues>(
-        new BufferResourceConfiguration<BufferValues>(
+var buffer = new SingleBuffer<BufferValues, object?>(
+    new BufferResource<BufferValues, object?>(
+        new BufferResourceConfiguration<BufferValues, object?>(
             (out BufferValues rsc) => rsc = new BufferValues(0, 0F, 0L),
             (ref BufferValues rsc, bool _, object? _) =>
             {
@@ -24,7 +24,7 @@ var bufferUpdaterTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).Star
     var token = cts.Token;
     while (!token.IsCancellationRequested)
     {
-        buffer.UpdateBuffer();
+        buffer.UpdateBuffer(null);
     }
 });
 

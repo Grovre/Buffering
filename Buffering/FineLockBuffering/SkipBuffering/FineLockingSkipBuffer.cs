@@ -3,13 +3,13 @@ using Buffering.Locking;
 
 namespace Buffering.FineLockBuffering.SkipBuffering;
 
-public class FineLockingSkipBuffer<T>
+public class FineLockingSkipBuffer<T, TUpdaterState>
     where T : struct
 {
-    private readonly BufferResource<T>[] _resources;
+    private readonly BufferResource<T, TUpdaterState>[] _resources;
     private volatile int _index;
 
-    public FineLockingSkipBuffer(params BufferResource<T>[] resources)
+    public FineLockingSkipBuffer(params BufferResource<T, TUpdaterState>[] resources)
     {
         if (resources.Length == 0)
             throw new ArgumentOutOfRangeException(
@@ -17,12 +17,12 @@ public class FineLockingSkipBuffer<T>
                 "There must be at least 1 resource");
         
         _index = -1; // Start at 0
-        _resources = new BufferResource<T>[resources.Length];
+        _resources = new BufferResource<T, TUpdaterState>[resources.Length];
         for (var i = 0; i < resources.Length; i++)
-            _resources[i] = new BufferResource<T>(resources[i]);
+            _resources[i] = new BufferResource<T, TUpdaterState>(resources[i]);
     }
 
-    public bool TryUpdate(int index, object? state = null)
+    public bool TryUpdate(int index, TUpdaterState state)
     {
         var rsc = _resources[index];
         var locked = rsc.TryLock(ResourceAccessFlag.Write, out var hlock);

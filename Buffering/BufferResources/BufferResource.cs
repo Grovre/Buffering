@@ -7,7 +7,7 @@ namespace Buffering.BufferResources;
 /// An object representing a resource object in a buffer
 /// </summary>
 /// <typeparam name="T">Value type of resource object</typeparam>
-public class BufferResource<T>
+public class BufferResource<T, TUpdaterState>
     where T : struct
 {
     /// <summary>
@@ -15,7 +15,7 @@ public class BufferResource<T>
     /// Includes a boolean for determining whether the resource was updated by a previous call from the resource updater or not.
     /// Never lock on objects outside of the function as this function may be shared between more resources.
     /// </summary>
-    public delegate void ResourceUpdater(ref T rsc, bool fromUpdater, object? state);
+    public delegate void ResourceUpdater(ref T rsc, bool fromUpdater, TUpdaterState state);
     
     /// <summary>
     /// Used for initializing the resource object. This is what will everything see before the first update.
@@ -40,18 +40,18 @@ public class BufferResource<T>
     /// <summary>
     /// State passed into the updater to avoid capturing
     /// </summary>
-    public object? UpdaterState { get; set; }
+    public TUpdaterState UpdaterState { get; set; }
 
-    private readonly BufferResourceConfiguration<T> _config;
+    private readonly BufferResourceConfiguration<T, TUpdaterState> _config;
 
     /// <summary>
     /// Normal constructor. Resource is initialized to what init returns and IsResourceFromUpdater is initialized to false.
     /// </summary>
     /// <param name="init">Initial value for the resource</param>
     /// <param name="updater">Resource object updater</param>
-    public BufferResource(BufferResourceConfiguration<T> configuration)
+    public BufferResource(BufferResourceConfiguration<T, TUpdaterState> configuration)
     {
-        _config = new BufferResourceConfiguration<T>(
+        _config = new BufferResourceConfiguration<T, TUpdaterState>(
             configuration.Init,
             configuration.Updater,
             configuration.ResourceLock.Copy());
@@ -63,7 +63,7 @@ public class BufferResource<T>
     /// not be assigned to the other's resource object
     /// </summary>
     /// <param name="other">Resource to copy from</param>
-    public BufferResource(BufferResource<T> other, bool skipInit = false)
+    public BufferResource(BufferResource<T, TUpdaterState> other, bool skipInit = false)
     {
         _config = other._config;
         if (!skipInit)
@@ -94,7 +94,7 @@ public class BufferResource<T>
         IsResourceFromUpdater = true;
     }
 
-    internal void CopyFromResource(BufferResource<T> other)
+    internal void CopyFromResource(BufferResource<T, TUpdaterState> other)
     {
         _resource = other._resource;
     }
