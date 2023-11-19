@@ -41,8 +41,8 @@ var readerTasks = Enumerable.Range(0, 3)
         var token = cts.Token;
         while (!token.IsCancellationRequested)
         {
-            skipBuffer.GetNext(out var rsc).Dispose();
-            Console.WriteLine($"{rsc}");
+            skipBuffer.GetNext(out var rsc, out var info).Dispose();
+            Console.WriteLine($"{info.Id}: {rsc}");
         }
     })).ToArray();
     

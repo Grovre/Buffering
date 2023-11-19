@@ -6,6 +6,7 @@ namespace Buffering.FineLockBuffering.SkipBuffering;
 public class FineLockingSkipBuffer<T, TUpdaterState>
     where T : struct
 {
+    private readonly BufferedResourceInfo[] _infos;
     private readonly BufferResource<T, TUpdaterState>[] _resources;
     private volatile int _index;
 
@@ -20,6 +21,7 @@ public class FineLockingSkipBuffer<T, TUpdaterState>
         _resources = new BufferResource<T, TUpdaterState>[resources.Length];
         for (var i = 0; i < resources.Length; i++)
             _resources[i] = new BufferResource<T, TUpdaterState>(resources[i]);
+        _infos = new BufferedResourceInfo[_resources.Length];
     }
 
     public bool TryUpdate(int index, TUpdaterState state)
@@ -31,12 +33,13 @@ public class FineLockingSkipBuffer<T, TUpdaterState>
 
         rsc.UpdaterState = state;
         rsc.UpdateResource();
+        _infos[index] = BufferedResourceInfo.PrepareNextInfo(_infos[index], true);
         
         hlock.Dispose();
         return true;
     }
 
-    public ResourceLockHandle GetNext(out T rscObject)
+    public ResourceLockHandle GetNext(out T rscObject, out BufferedResourceInfo info)
     {
         while (true)
         {
@@ -51,6 +54,8 @@ public class FineLockingSkipBuffer<T, TUpdaterState>
                 continue;
 
             rscObject = rsc.Resource;
+            info = _infos[i];
+            
             return hlock;
         }
     }
