@@ -26,19 +26,21 @@ This next part creates the long-running back buffer update thread:
 var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).StartNew(() =>
 {
     var token = cts.Token;
+    var controller = db.BackController;
     while (!token.IsCancellationRequested)
     {
-        db.UpdateBackBuffer();
-        db.SwapBuffers();
+        controller.UpdateBackBuffer();
+        controller.SwapBuffers();
     }
 });
 ```
 
 Finally, the portion of the program that reads the buffer until the task is over and it updates no more:
 ```cs
+var reader = db.FrontReader;
 while (!bufferUpdateTask.IsCompleted)
 {
-    db.ReadFrontBuffer(out var rsc, out var rscInfo).Dispose(); // Dispose of the lock returned
+    reader.ReadFrontBuffer(out var rsc, out var rscInfo).Dispose();
     Console.WriteLine($"{rscInfo.Id:N0}: {rsc} : {rscInfo}");
 }
 ```

@@ -19,6 +19,7 @@ public readonly ref struct LockHandle
 
     public LockHandle()
     {
+        throw new NotImplementedException();
         // TODO: NoLock
     }
 
