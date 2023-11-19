@@ -7,7 +7,7 @@
     {
         internal const string BadOwnerExceptionMessage = "Lock handle not owned by lock queried for unlocking";
         
-        internal LockHandle Lock(BufferAccessFlag flags = BufferAccessFlag.Generic);
+        internal LockHandle Lock(BufferAccessFlag flags);
 
         internal void Unlock(LockHandle hlock);
     }

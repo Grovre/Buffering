@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace Buffering.DoubleBuffering;
+namespace Buffering;
 
 /// <summary>
 /// An object representing a resource object in a buffer

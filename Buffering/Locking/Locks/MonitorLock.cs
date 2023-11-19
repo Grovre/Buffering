@@ -17,6 +17,7 @@ public class MonitorLock : IBufferLock
     {
         if (hlock.Owner != this)
             throw new Exception(IBufferLock.BadOwnerExceptionMessage);
+        
         Monitor.Exit(this);
     }
 }

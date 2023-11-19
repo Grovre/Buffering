@@ -1,4 +1,4 @@
-﻿namespace Buffering.DoubleBuffering;
+﻿namespace Buffering;
 
 /// <summary>
 /// Represents metadata of the current front buffer resource.
@@ -31,5 +31,11 @@ public readonly record struct ResourceInfo
     {
         Id = id;
         FromBuffer = fromBuffer;
+    }
+
+    internal static ResourceInfo PrepareNextInfo(in ResourceInfo currentInfo, bool fromBuffer)
+    {
+        var id = unchecked(currentInfo.Id + 1);
+        return new ResourceInfo(id, fromBuffer);
     }
 }

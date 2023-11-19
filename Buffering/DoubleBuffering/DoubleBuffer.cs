@@ -68,7 +68,7 @@ public class DoubleBuffer<T>
     /// <exception cref="Exception">Unknown/unsupported swap effect</exception>
     internal void SwapBuffers()
     {
-        var nextInfo = PrepareNextInfoOnSwap();
+        var nextInfo = ResourceInfo.PrepareNextInfo(_frontInfo, true);
 
         switch (_config.SwapEffect)
         {
@@ -93,13 +93,5 @@ public class DoubleBuffer<T>
         }
         
         Debug.Assert(!ReferenceEquals(_rsc0, _rsc1));
-    }
-
-    private ResourceInfo PrepareNextInfoOnSwap()
-    {
-        const bool fromBuffer = true;
-        var id = unchecked(_frontInfo.Id + 1);
-        
-        return new ResourceInfo(id, fromBuffer);
     }
 }

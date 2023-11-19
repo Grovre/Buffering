@@ -1,6 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Numerics;
+using Buffering;
 using Buffering.DoubleBuffering;
 using Buffering.Locking.Locks;
 
