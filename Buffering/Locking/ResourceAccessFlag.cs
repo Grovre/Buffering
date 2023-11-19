@@ -1,7 +1,7 @@
 ﻿namespace Buffering.Locking;
 
 [Flags]
-public enum BufferAccessFlag
+public enum ResourceAccessFlag
 {
     Generic = 1 << 0,
     Read = 1 << 1,

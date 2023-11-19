@@ -4,7 +4,7 @@ namespace Buffering.SingleBuffering;
 
 public class SingleBufferConfiguration : BufferConfiguration
 {
-    public SingleBufferConfiguration(IBufferLock lockImpl) : base(lockImpl)
+    public SingleBufferConfiguration()
     {
     }
 }

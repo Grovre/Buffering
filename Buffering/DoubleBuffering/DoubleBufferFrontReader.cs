@@ -32,7 +32,7 @@ public readonly struct DoubleBufferFrontReader<T>
     }
 
     /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.ReadFrontBuffer(`0@,Buffering.DoubleBuffering.ResourceInfo@)"/>
-    public LockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
+    public ResourceLockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
     {
         return DoubleBuffer.ReadFrontBuffer(out rsc, out info);
     }

@@ -8,13 +8,7 @@ namespace Buffering;
 /// </summary>
 public abstract class BufferConfiguration
 {
-    /// <summary>
-    /// Lock implementation to be used with the double buffer
-    /// </summary>
-    public IBufferLock LockImpl { get; }
-    
-    protected BufferConfiguration(IBufferLock lockImpl)
+    protected BufferConfiguration()
     {
-        LockImpl = lockImpl;
     }
 }

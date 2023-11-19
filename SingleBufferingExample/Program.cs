@@ -12,8 +12,8 @@ var buffer = new SingleBuffer<BufferValues>(
             values.N += 1;
             values.F += 0.5f;
             values.L += 2L;
-        }),
-    new SingleBufferConfiguration(new MonitorLock()));
+        },
+        new MonitorLock()));
 
 var cts = new CancellationTokenSource(10_000);
 

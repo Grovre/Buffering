@@ -10,16 +10,17 @@ public class SingleBuffer<T>
     private ResourceInfo _info;
     private readonly SingleBufferConfiguration _config;
 
-    public SingleBuffer(BufferingResource<T> rsc, SingleBufferConfiguration config)
+    public SingleBuffer(BufferingResource<T> rsc, SingleBufferConfiguration? config = null)
     {
+        config ??= new SingleBufferConfiguration();
         _rsc = new(rsc);
         _config = config;
         _info = default;
     }
 
-    public LockHandle ReadBuffer(out T rsc, out ResourceInfo info)
+    public ResourceLockHandle ReadBuffer(out T rsc, out ResourceInfo info)
     {
-        var hlock = _config.LockImpl.Lock(BufferAccessFlag.Read);
+        var hlock = _rsc.Lock(ResourceAccessFlag.Read);
         rsc = _rsc.Resource;
         info = _info;
         return hlock;
@@ -27,7 +28,7 @@ public class SingleBuffer<T>
 
     public void UpdateBuffer()
     {
-        using var hlock = _config.LockImpl.Lock(BufferAccessFlag.Read);
+        using var hlock = _rsc.Lock(ResourceAccessFlag.Read);
         _rsc.UpdateResource();
         _info = ResourceInfo.PrepareNextInfo(_info, true);
     }

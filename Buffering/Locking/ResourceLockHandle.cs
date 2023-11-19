@@ -6,18 +6,18 @@
 /// If not disposed, the buffer will be locked.
 /// Readonly ref struct guarantees stack allocation for fastest locking and unlocking in an OOP manner.
 /// </summary>
-public readonly ref struct LockHandle
+public readonly struct ResourceLockHandle : IDisposable
 {
-    internal IBufferLock Owner { get; }
-    public BufferAccessFlag AccessFlags { get; }
+    internal IResourceLock Owner { get; }
+    public ResourceAccessFlag AccessFlags { get; }
 
-    internal LockHandle(IBufferLock owner, BufferAccessFlag accessFlags)
+    internal ResourceLockHandle(IResourceLock owner, ResourceAccessFlag accessFlags)
     {
         Owner = owner;
         AccessFlags = accessFlags;
     }
 
-    public LockHandle()
+    public ResourceLockHandle()
     {
         throw new NotImplementedException();
         // TODO: NoLock

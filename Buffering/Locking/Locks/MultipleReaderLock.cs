@@ -7,47 +7,59 @@ namespace Buffering.Locking.Locks;
 /// Best use case is when multiple reader threads are involved.
 /// Access flags must not be generic. They must be read or write.
 /// </summary>
-public class MultipleReaderLock : IBufferLock
+public class MultipleReaderLock : IResourceLock
 {
     private readonly ReaderWriterLockSlim _lock = new();
 
-    public LockHandle Lock(BufferAccessFlag flags = BufferAccessFlag.Generic)
+    public ResourceLockHandle Lock(ResourceAccessFlag flags = ResourceAccessFlag.Generic)
     {
-        if ((flags & BufferAccessFlag.Write) != 0)
+        if ((flags & ResourceAccessFlag.Write) != 0)
         {
             return WriteLock();
         }
 
-        if ((flags & BufferAccessFlag.Read) != 0)
+        if ((flags & ResourceAccessFlag.Read) != 0)
         {
             return ReadLock();
         }
         
-        throw new Exception("Generic or unspecified buffer access not supported");
+        throw new NotSupportedException("Generic or unspecified buffer access not supported");
     }
 
-    public LockHandle ReadLock()
+    public bool TryLock(ResourceAccessFlag flags, out ResourceLockHandle hlock)
+    {
+        // TODO: support
+        throw new NotImplementedException(
+            "Lazy, I'll come back to this");
+    }
+
+    public ResourceLockHandle ReadLock()
     {
         _lock.EnterReadLock();
-        return new LockHandle(this, BufferAccessFlag.Read);
+        return new ResourceLockHandle(this, ResourceAccessFlag.Read);
     }
 
-    public LockHandle WriteLock()
+    public ResourceLockHandle WriteLock()
     {
         _lock.EnterWriteLock();
-        return new LockHandle(this, BufferAccessFlag.Write);
+        return new ResourceLockHandle(this, ResourceAccessFlag.Write);
     }
 
-    public void Unlock(LockHandle hlock)
+    public void Unlock(ResourceLockHandle hlock)
     {
         if (hlock.Owner != this)
-            throw new AuthenticationException(IBufferLock.BadOwnerExceptionMessage);
+            throw new AuthenticationException(IResourceLock.BadOwnerExceptionMessage);
         
-        if ((hlock.AccessFlags & BufferAccessFlag.Write) != 0)
+        if ((hlock.AccessFlags & ResourceAccessFlag.Write) != 0)
             _lock.ExitWriteLock();
-        else if ((hlock.AccessFlags & BufferAccessFlag.Read) != 0)
+        else if ((hlock.AccessFlags & ResourceAccessFlag.Read) != 0)
             _lock.ExitReadLock();
         else
             throw new NotSupportedException("Lock must be a write or read lock");
+    }
+
+    public IResourceLock Copy()
+    {
+        return new MultipleReaderLock();
     }
 }

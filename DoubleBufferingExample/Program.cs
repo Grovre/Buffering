@@ -8,9 +8,9 @@ using Buffering.Locking.Locks;
 var db = new DoubleBuffer<Vector3>(
     rsc: new BufferingResource<Vector3>(
         init: () => Vector3.Zero,
-        updater: (ref Vector3 rsc, bool _) => rsc = new Vector3(rsc.X + 1F)),
+        updater: (ref Vector3 rsc, bool _) => rsc = new Vector3(rsc.X + 1F),
+        new MonitorLock()),
     configuration: new DoubleBufferConfiguration(
-        lockImpl: new MonitorLock(),
         swapEffect: DoubleBufferSwapEffect.Flip));
 
 var cts = new CancellationTokenSource(10_000);

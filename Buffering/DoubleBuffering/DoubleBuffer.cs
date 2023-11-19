@@ -38,10 +38,10 @@ public class DoubleBuffer<T>
     /// </summary>
     /// <param name="rsc">Ref variable to read the buffer to</param>
     /// <param name="info">Minimal information about the current front buffer object</param>
-    /// <returns>LockHandle to be disposed of immediately after reading/writing the buffer. This should be done ASAP</returns>
-    internal LockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
+    /// <returns>ResourceLockHandle to be disposed of immediately after reading/writing the buffer. This should be done ASAP</returns>
+    internal ResourceLockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
     {
-        var hlock = _config.LockImpl.Lock(BufferAccessFlag.Read);
+        var hlock = _rsc0.Lock(ResourceAccessFlag.Read);
         rsc = _rsc0.Resource;
         info = _frontInfo;
         return hlock;
@@ -69,11 +69,11 @@ public class DoubleBuffer<T>
     internal void SwapBuffers()
     {
         var nextInfo = ResourceInfo.PrepareNextInfo(_frontInfo, true);
-
+        
         switch (_config.SwapEffect)
         {
             case DoubleBufferSwapEffect.Flip:
-                var hlock1 = _config.LockImpl.Lock(BufferAccessFlag.Write);
+                var hlock1 = _rsc0.Lock(ResourceAccessFlag.Write);
                 var t = _rsc0;
                 _rsc0 = _rsc1;
                 _frontInfo = nextInfo;
@@ -82,14 +82,15 @@ public class DoubleBuffer<T>
                 break;
             
             case DoubleBufferSwapEffect.Copy:
-                var hlock2 = _config.LockImpl.Lock(BufferAccessFlag.Write);
+                var hlock2 = _rsc0.Lock(ResourceAccessFlag.Write);
                 _rsc0.CopyFromResource(_rsc1);
                 _frontInfo = nextInfo;
                 hlock2.Dispose();
                 break;
             
             default:
-                throw new Exception("Unsupported swap effect");
+                throw new NotSupportedException(
+                    "Unsupported swap effect");
         }
         
         Debug.Assert(!ReferenceEquals(_rsc0, _rsc1));

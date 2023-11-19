@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Buffering.Locking;
 
 namespace Buffering;
 
@@ -31,18 +32,20 @@ public class BufferingResource<T>
     public T Resource => _resource;
     private readonly ResourceUpdater _updater;
     private readonly Func<T> _init;
+    private readonly IResourceLock _lock;
 
     /// <summary>
     /// Normal constructor. Resource is initialized to what init returns and IsResourceFromUpdater is initialized to false.
     /// </summary>
     /// <param name="init">Initial value for the resource</param>
     /// <param name="updater">Resource object updater</param>
-    public BufferingResource(Func<T> init, ResourceUpdater updater)
+    public BufferingResource(Func<T> init, ResourceUpdater updater, IResourceLock rscLock)
     {
         IsResourceFromUpdater = false;
         _init = init;
         _resource = init();
         _updater = updater;
+        _lock = rscLock;
     }
 
     /// <summary>
@@ -57,7 +60,22 @@ public class BufferingResource<T>
         _init = other._init;
         _resource = _init();
         _updater = other._updater;
+        _lock = other._lock.Copy();
     }
+    
+    #region LockingMechanisms
+
+    internal ResourceLockHandle Lock(ResourceAccessFlag flags)
+    {
+        return _lock.Lock(flags);
+    }
+
+    internal bool TryLock(ResourceAccessFlag flags, out ResourceLockHandle hlock)
+    {
+        return _lock.TryLock(flags, out hlock);
+    }
+
+    #endregion
 
     /// <summary>
     /// Uses the updater to update the resource object.
@@ -67,12 +85,6 @@ public class BufferingResource<T>
     {
         _updater(ref _resource, IsResourceFromUpdater);
         IsResourceFromUpdater = true;
-    }
-
-    internal void SetDefault()
-    {
-        IsResourceFromUpdater = false;
-        _resource = _init();
     }
 
     internal void CopyFromResource(BufferingResource<T> other)
