@@ -1,13 +1,13 @@
 ﻿using System.Runtime.CompilerServices;
 using Buffering.Locking;
 
-namespace Buffering;
+namespace Buffering.BufferResources;
 
 /// <summary>
 /// An object representing a resource object in a buffer
 /// </summary>
 /// <typeparam name="T">Value type of resource object</typeparam>
-public class BufferingResource<T>
+public class BufferResource<T>
     where T : struct
 {
     /// <summary>
@@ -34,16 +34,16 @@ public class BufferingResource<T>
     /// </summary>
     public T Resource => _resource;
 
-    private readonly BufferingResourceConfiguration<T> _config;
+    private readonly BufferResourceConfiguration<T> _config;
 
     /// <summary>
     /// Normal constructor. Resource is initialized to what init returns and IsResourceFromUpdater is initialized to false.
     /// </summary>
     /// <param name="init">Initial value for the resource</param>
     /// <param name="updater">Resource object updater</param>
-    public BufferingResource(BufferingResourceConfiguration<T> configuration)
+    public BufferResource(BufferResourceConfiguration<T> configuration)
     {
-        _config = new BufferingResourceConfiguration<T>(
+        _config = new BufferResourceConfiguration<T>(
             configuration.Init,
             configuration.Updater,
             configuration.ResourceLock.Copy());
@@ -55,7 +55,7 @@ public class BufferingResource<T>
     /// not be assigned to the other's resource object
     /// </summary>
     /// <param name="other">Resource to copy from</param>
-    public BufferingResource(BufferingResource<T> other)
+    public BufferResource(BufferResource<T> other)
     {
         _config = other._config;
     }
@@ -84,7 +84,7 @@ public class BufferingResource<T>
         IsResourceFromUpdater = true;
     }
 
-    internal void CopyFromResource(BufferingResource<T> other)
+    internal void CopyFromResource(BufferResource<T> other)
     {
         _resource = other._resource;
     }

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Buffering.BufferResources;
 using Buffering.Locking;
 
 namespace Buffering.DoubleBuffering;
@@ -11,8 +12,8 @@ public class DoubleBuffer<T>
     where T : struct
 {
     // originally from array but remove extra pointer deref
-    private BufferingResource<T> _rsc0; // front
-    private BufferingResource<T> _rsc1; // back
+    private BufferResource<T> _rsc0; // front
+    private BufferResource<T> _rsc1; // back
     private BufferedResourceInfo _frontInfo;
     private readonly DoubleBufferConfiguration _config;
 
@@ -24,11 +25,11 @@ public class DoubleBuffer<T>
     /// </summary>
     /// <param name="rsc">Copied to the two buffers to avoid issues with resource objects referencing the same existing object</param>
     /// <param name="configuration">Sets up how the double buffer will run. If null, uses default configuration</param>
-    public DoubleBuffer(in BufferingResource<T> rsc, DoubleBufferConfiguration? configuration = null)
+    public DoubleBuffer(in BufferResource<T> rsc, DoubleBufferConfiguration? configuration = null)
     {
         _config = configuration ?? DoubleBufferConfiguration.Default;
-        _rsc0 = new BufferingResource<T>(rsc);
-        _rsc1 = new BufferingResource<T>(rsc);
+        _rsc0 = new BufferResource<T>(rsc);
+        _rsc1 = new BufferResource<T>(rsc);
         _frontInfo = default;
     }
     

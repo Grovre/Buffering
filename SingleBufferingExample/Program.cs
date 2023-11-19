@@ -1,12 +1,13 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using Buffering;
+using Buffering.BufferResources;
 using Buffering.Locking.Locks;
 using Buffering.SingleBuffering;
+using SingleBufferingExample;
 
 var buffer = new SingleBuffer<BufferValues>(
-    new BufferingResource<BufferValues>(
-        new BufferingResourceConfiguration<BufferValues>(
+    new BufferResource<BufferValues>(
+        new BufferResourceConfiguration<BufferValues>(
             (out BufferValues rsc) => rsc = new BufferValues(0, 0F, 0L),
             (ref BufferValues rsc, bool _) =>
             {
@@ -34,4 +35,7 @@ while (!bufferUpdaterTask.IsCompleted)
     Console.WriteLine($"id: {info.Id:N0}, rsc: {rsc}");
 }
 
-record struct BufferValues(int N, float F, long L);
+namespace SingleBufferingExample
+{
+    record struct BufferValues(int N, float F, long L);
+}

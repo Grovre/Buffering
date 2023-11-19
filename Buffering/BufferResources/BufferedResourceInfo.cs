@@ -1,4 +1,4 @@
-﻿namespace Buffering;
+﻿namespace Buffering.BufferResources;
 
 /// <summary>
 /// Represents metadata of the current front buffer resource.

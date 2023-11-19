@@ -1,4 +1,5 @@
-﻿using Buffering.Locking;
+﻿using Buffering.BufferResources;
+using Buffering.Locking;
 
 namespace Buffering.DoubleBuffering;
 

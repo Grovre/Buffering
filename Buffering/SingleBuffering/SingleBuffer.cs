@@ -1,4 +1,5 @@
-﻿using Buffering.DoubleBuffering;
+﻿using Buffering.BufferResources;
+using Buffering.DoubleBuffering;
 using Buffering.Locking;
 
 namespace Buffering.SingleBuffering;
@@ -6,11 +7,11 @@ namespace Buffering.SingleBuffering;
 public class SingleBuffer<T>
     where T : struct
 {
-    private readonly BufferingResource<T> _rsc;
+    private readonly BufferResource<T> _rsc;
     private BufferedResourceInfo _info;
     private readonly SingleBufferConfiguration _config;
 
-    public SingleBuffer(BufferingResource<T> rsc, SingleBufferConfiguration? config = null)
+    public SingleBuffer(BufferResource<T> rsc, SingleBufferConfiguration? config = null)
     {
         config ??= new SingleBufferConfiguration();
         _rsc = new(rsc);

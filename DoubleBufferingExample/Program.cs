@@ -2,12 +2,13 @@
 
 using System.Numerics;
 using Buffering;
+using Buffering.BufferResources;
 using Buffering.DoubleBuffering;
 using Buffering.Locking.Locks;
 
 var db = new DoubleBuffer<Vector3>(
-    rsc: new BufferingResource<Vector3>(
-        new BufferingResourceConfiguration<Vector3>(
+    rsc: new BufferResource<Vector3>(
+        new BufferResourceConfiguration<Vector3>(
             (out Vector3 v3) => v3 = default,
             (ref Vector3 rsc, bool _) => rsc = new Vector3(rsc.X + 1),
             new MonitorLock())),
