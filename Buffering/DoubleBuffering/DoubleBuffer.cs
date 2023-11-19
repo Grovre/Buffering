@@ -13,7 +13,7 @@ public class DoubleBuffer<T>
     // originally from array but remove extra pointer deref
     private BufferingResource<T> _rsc0; // front
     private BufferingResource<T> _rsc1; // back
-    private ResourceInfo _frontInfo;
+    private BufferedResourceInfo _frontInfo;
     private readonly DoubleBufferConfiguration _config;
 
     public DoubleBufferFrontReader<T> FrontReader => new(this);
@@ -39,7 +39,7 @@ public class DoubleBuffer<T>
     /// <param name="rsc">Ref variable to read the buffer to</param>
     /// <param name="info">Minimal information about the current front buffer object</param>
     /// <returns>ResourceLockHandle to be disposed of immediately after reading/writing the buffer. This should be done ASAP</returns>
-    internal ResourceLockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
+    internal ResourceLockHandle ReadFrontBuffer(out T rsc, out BufferedResourceInfo info)
     {
         var hlock = _rsc0.Lock(ResourceAccessFlag.Read);
         rsc = _rsc0.Resource;
@@ -68,7 +68,7 @@ public class DoubleBuffer<T>
     /// <exception cref="Exception">Unknown/unsupported swap effect</exception>
     internal void SwapBuffers()
     {
-        var nextInfo = ResourceInfo.PrepareNextInfo(_frontInfo, true);
+        var nextInfo = BufferedResourceInfo.PrepareNextInfo(_frontInfo, true);
         
         switch (_config.SwapEffect)
         {

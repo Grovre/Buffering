@@ -4,7 +4,7 @@
 /// Represents metadata of the current front buffer resource.
 /// Double buffer instances are updated every time the front buffer is updated.
 /// </summary>
-public readonly record struct ResourceInfo
+public readonly record struct BufferedResourceInfo
 {
     /// <summary>
     /// The 'u' in 'uint' stands for unique until overflow and Id rolls back to 0
@@ -21,21 +21,21 @@ public readonly record struct ResourceInfo
     /// FromBuffer will be initialized to false.
     /// </summary>
     /// <param name="id">The ID to use</param>
-    public ResourceInfo(uint id)
+    public BufferedResourceInfo(uint id)
     {
         Id = id;
         FromBuffer = false;
     }
 
-    internal ResourceInfo(uint id, bool fromBuffer)
+    internal BufferedResourceInfo(uint id, bool fromBuffer)
     {
         Id = id;
         FromBuffer = fromBuffer;
     }
 
-    internal static ResourceInfo PrepareNextInfo(in ResourceInfo currentInfo, bool fromBuffer)
+    internal static BufferedResourceInfo PrepareNextInfo(in BufferedResourceInfo currentInfo, bool fromBuffer)
     {
         var id = unchecked(currentInfo.Id + 1);
-        return new ResourceInfo(id, fromBuffer);
+        return new BufferedResourceInfo(id, fromBuffer);
     }
 }

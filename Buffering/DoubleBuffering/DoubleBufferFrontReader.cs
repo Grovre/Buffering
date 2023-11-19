@@ -31,8 +31,8 @@ public readonly struct DoubleBufferFrontReader<T>
             "Front reader must be retrieved through a double buffer.");
     }
 
-    /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.ReadFrontBuffer(`0@,Buffering.DoubleBuffering.ResourceInfo@)"/>
-    public ResourceLockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
+    /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.ReadFrontBuffer(`0@,Buffering.DoubleBuffering.BufferedResourceInfo@)"/>
+    public ResourceLockHandle ReadFrontBuffer(out T rsc, out BufferedResourceInfo info)
     {
         return DoubleBuffer.ReadFrontBuffer(out rsc, out info);
     }

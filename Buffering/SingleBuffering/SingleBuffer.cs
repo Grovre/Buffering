@@ -7,7 +7,7 @@ public class SingleBuffer<T>
     where T : struct
 {
     private readonly BufferingResource<T> _rsc;
-    private ResourceInfo _info;
+    private BufferedResourceInfo _info;
     private readonly SingleBufferConfiguration _config;
 
     public SingleBuffer(BufferingResource<T> rsc, SingleBufferConfiguration? config = null)
@@ -18,7 +18,7 @@ public class SingleBuffer<T>
         _info = default;
     }
 
-    public ResourceLockHandle ReadBuffer(out T rsc, out ResourceInfo info)
+    public ResourceLockHandle ReadBuffer(out T rsc, out BufferedResourceInfo info)
     {
         var hlock = _rsc.Lock(ResourceAccessFlag.Read);
         rsc = _rsc.Resource;
@@ -30,6 +30,6 @@ public class SingleBuffer<T>
     {
         using var hlock = _rsc.Lock(ResourceAccessFlag.Read);
         _rsc.UpdateResource();
-        _info = ResourceInfo.PrepareNextInfo(_info, true);
+        _info = BufferedResourceInfo.PrepareNextInfo(_info, true);
     }
 }
