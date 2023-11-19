@@ -1,4 +1,6 @@
-﻿namespace Buffering.Locking.Locks;
+﻿using System.Security.Authentication;
+
+namespace Buffering.Locking.Locks;
 
 /// <summary>
 /// Uses a monitor to lock the front buffer for reading/writing.
@@ -16,7 +18,7 @@ public class MonitorLock : IBufferLock
     public void Unlock(LockHandle hlock)
     {
         if (hlock.Owner != this)
-            throw new Exception(IBufferLock.BadOwnerExceptionMessage);
+            throw new AuthenticationException(IBufferLock.BadOwnerExceptionMessage);
         
         Monitor.Exit(this);
     }

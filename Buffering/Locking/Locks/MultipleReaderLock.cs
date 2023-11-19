@@ -1,4 +1,6 @@
-﻿namespace Buffering.Locking.Locks;
+﻿using System.Security.Authentication;
+
+namespace Buffering.Locking.Locks;
 
 /// <summary>
 /// Uses a ReaderWriterLockSlim in order to synchronize access to a buffer.
@@ -39,13 +41,13 @@ public class MultipleReaderLock : IBufferLock
     public void Unlock(LockHandle hlock)
     {
         if (hlock.Owner != this)
-            throw new Exception(IBufferLock.BadOwnerExceptionMessage);
+            throw new AuthenticationException(IBufferLock.BadOwnerExceptionMessage);
         
         if ((hlock.AccessFlags & BufferAccessFlag.Write) != 0)
             _lock.ExitWriteLock();
         else if ((hlock.AccessFlags & BufferAccessFlag.Read) != 0)
             _lock.ExitReadLock();
         else
-            throw new Exception("Lock must be a write or read lock");
+            throw new NotSupportedException("Lock must be a write or read lock");
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Buffering.Locking.Locks;
+﻿using System.Security.Authentication;
+
+namespace Buffering.Locking.Locks;
 
 /// <summary>
 /// Like monitor but keeps the CPU spinning for the next possible entry
@@ -17,7 +19,7 @@ public class SpinnerLock : IBufferLock
     public void Unlock(LockHandle hlock)
     {
         if (hlock.Owner != this)
-            throw new Exception(IBufferLock.BadOwnerExceptionMessage);
+            throw new AuthenticationException(IBufferLock.BadOwnerExceptionMessage);
 
         _lock.Exit();
     }
