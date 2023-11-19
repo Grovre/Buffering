@@ -9,7 +9,7 @@ var buffer = new SingleBuffer<BufferValues>(
     new BufferResource<BufferValues>(
         new BufferResourceConfiguration<BufferValues>(
             (out BufferValues rsc) => rsc = new BufferValues(0, 0F, 0L),
-            (ref BufferValues rsc, bool _) =>
+            (ref BufferValues rsc, bool _, object? _) =>
             {
                 rsc.N += 1;
                 rsc.F += 0.5F;

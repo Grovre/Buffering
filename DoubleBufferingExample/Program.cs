@@ -10,7 +10,7 @@ var db = new DoubleBuffer<Vector3>(
     rsc: new BufferResource<Vector3>(
         new BufferResourceConfiguration<Vector3>(
             (out Vector3 v3) => v3 = default,
-            (ref Vector3 rsc, bool _) => rsc = new Vector3(rsc.X + 1),
+            (ref Vector3 rsc, bool _, object? _) => rsc = new Vector3(rsc.X + 1),
             new MonitorLock())),
     configuration: new DoubleBufferConfiguration(
         swapEffect: DoubleBufferSwapEffect.Flip));

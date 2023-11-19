@@ -15,8 +15,11 @@ public class BufferResource<T>
     /// Includes a boolean for determining whether the resource was updated by a previous call from the resource updater or not.
     /// Never lock on objects outside of the function as this function may be shared between more resources.
     /// </summary>
-    public delegate void ResourceUpdater(ref T rsc, bool fromUpdater);
+    public delegate void ResourceUpdater(ref T rsc, bool fromUpdater, object? state);
     
+    /// <summary>
+    /// Used for initializing the resource object. This is what will everything see before the first update.
+    /// </summary>
     public delegate void Initializer(out T rsc);
 
     /// <summary>
@@ -33,6 +36,11 @@ public class BufferResource<T>
     /// The object represented by this resource
     /// </summary>
     public T Resource => _resource;
+
+    /// <summary>
+    /// State passed into the updater to avoid capturing
+    /// </summary>
+    public object? UpdaterState { get; set; }
 
     private readonly BufferResourceConfiguration<T> _config;
 
@@ -55,9 +63,11 @@ public class BufferResource<T>
     /// not be assigned to the other's resource object
     /// </summary>
     /// <param name="other">Resource to copy from</param>
-    public BufferResource(BufferResource<T> other)
+    public BufferResource(BufferResource<T> other, bool skipInit = false)
     {
         _config = other._config;
+        if (!skipInit)
+            _config.Init(out _resource);
     }
     
     #region LockingMechanisms
@@ -80,7 +90,7 @@ public class BufferResource<T>
     /// </summary>
     public void UpdateResource()
     {
-        _config.Updater(ref _resource, IsResourceFromUpdater);
+        _config.Updater(ref _resource, IsResourceFromUpdater, UpdaterState);
         IsResourceFromUpdater = true;
     }
 
