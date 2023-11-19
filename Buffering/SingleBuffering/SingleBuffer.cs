@@ -31,21 +31,4 @@ public class SingleBuffer<T>
         _rsc.UpdateResource();
         _info = ResourceInfo.PrepareNextInfo(_info, true);
     }
-
-    /// <summary>
-    /// If this is needed, look into double buffering.
-    /// Only implemented for the one-off chance this may
-    /// be needed.
-    /// </summary>
-    public void UpdateBufferSeparately()
-    {
-        var hlock = _config.LockImpl.Lock(BufferAccessFlag.Read);
-        var rsc = new BufferingResource<T>(_rsc);
-        hlock.Dispose();
-        
-        rsc.UpdateResource();
-        hlock = _config.LockImpl.Lock(BufferAccessFlag.Write);
-        _rsc.CopyFromResource(rsc);
-        hlock.Dispose();
-    }
 }
