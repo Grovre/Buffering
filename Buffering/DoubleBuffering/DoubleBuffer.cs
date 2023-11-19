@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Buffering.Locking;
 
-namespace Buffering.DoubleBuffers;
+namespace Buffering.DoubleBuffering;
 
 /// <summary>
 /// A double buffer

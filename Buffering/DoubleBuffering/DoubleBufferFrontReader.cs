@@ -1,6 +1,6 @@
 ﻿using Buffering.Locking;
 
-namespace Buffering.DoubleBuffers;
+namespace Buffering.DoubleBuffering;
 
 /// <summary>
 /// Used to read the front buffer of a double buffer
@@ -31,7 +31,7 @@ public readonly struct DoubleBufferFrontReader<T>
             "Front reader must be retrieved through a double buffer.");
     }
 
-    /// <inheritdoc cref="M:Buffering.DoubleBuffers.DoubleBuffer`1.ReadFrontBuffer(`0@,Buffering.DoubleBuffers.ResourceInfo@)"/>
+    /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.ReadFrontBuffer(`0@,Buffering.DoubleBuffering.ResourceInfo@)"/>
     public LockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
     {
         return DoubleBuffer.ReadFrontBuffer(out rsc, out info);

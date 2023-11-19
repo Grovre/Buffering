@@ -1,4 +1,4 @@
-﻿namespace Buffering.DoubleBuffers;
+﻿namespace Buffering.DoubleBuffering;
 
 public enum DoubleBufferSwapEffect
 {

@@ -1,4 +1,4 @@
-﻿namespace Buffering.DoubleBuffers;
+﻿namespace Buffering.DoubleBuffering;
 
 /// <summary>
 /// Represents metadata of the current front buffer resource.

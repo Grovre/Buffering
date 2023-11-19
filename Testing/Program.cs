@@ -1,7 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Numerics;
-using Buffering.DoubleBuffers;
+using Buffering.DoubleBuffering;
 using Buffering.Locking.Locks;
 
 var db = new DoubleBuffer<Vector3>(

@@ -1,12 +1,12 @@
 ﻿using Buffering.Locking;
 using Buffering.Locking.Locks;
 
-namespace Buffering.DoubleBuffers;
+namespace Buffering.DoubleBuffering;
 
 /// <summary>
 /// Configuration class for determining functionality of a double buffer
 /// </summary>
-public class DoubleBufferConfiguration
+public class DoubleBufferConfiguration : BufferConfiguration
 {
     /// <summary>
     ///  Default configuration.
@@ -17,17 +17,12 @@ public class DoubleBufferConfiguration
         => new(new MultipleReaderLock(), DoubleBufferSwapEffect.Flip);
     
     /// <summary>
-    /// Lock implementation to be used with the double buffer
-    /// </summary>
-    public IBufferLock LockImpl { get; }
-    /// <summary>
     /// Swap effect to be used with the double buffer
     /// </summary>
     public DoubleBufferSwapEffect SwapEffect { get; }
-
-    public DoubleBufferConfiguration(IBufferLock lockImpl, DoubleBufferSwapEffect swapEffect)
+    
+    public DoubleBufferConfiguration(IBufferLock lockImpl, DoubleBufferSwapEffect swapEffect) : base(lockImpl)
     {
-        LockImpl = lockImpl;
         SwapEffect = swapEffect;
     }
 }

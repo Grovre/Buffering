@@ -1,4 +1,4 @@
-﻿namespace Buffering.DoubleBuffers;
+﻿namespace Buffering.DoubleBuffering;
 
 /// <summary>
 /// Used to control the back buffer of a double buffer
@@ -32,13 +32,13 @@ public readonly struct DoubleBufferBackController<T>
             "Back controller must be retrieved through a double buffer.");
     }
 
-    /// <inheritdoc cref="M:Buffering.DoubleBuffers.DoubleBuffer`1.UpdateBackBuffer"/>
+    /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.UpdateBackBuffer"/>
     public void UpdateBackBuffer()
     {
         DoubleBuffer.UpdateBackBuffer();
     }
 
-    /// <inheritdoc cref="M:Buffering.DoubleBuffers.DoubleBuffer`1.SwapBuffers"/>
+    /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.SwapBuffers"/>
     public void SwapBuffers()
     {
         DoubleBuffer.SwapBuffers();
