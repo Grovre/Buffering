@@ -7,9 +7,10 @@ using Buffering.Locking.Locks;
 
 var db = new DoubleBuffer<Vector3>(
     rsc: new BufferingResource<Vector3>(
-        init: () => Vector3.Zero,
-        updater: (ref Vector3 rsc, bool _) => rsc = new Vector3(rsc.X + 1F),
-        new MonitorLock()),
+        new BufferingResourceConfiguration<Vector3>(
+            (out Vector3 v3) => v3 = default,
+            (ref Vector3 rsc, bool _) => rsc = new Vector3(rsc.X + 1),
+            new MonitorLock())),
     configuration: new DoubleBufferConfiguration(
         swapEffect: DoubleBufferSwapEffect.Flip));
 

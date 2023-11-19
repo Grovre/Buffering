@@ -6,14 +6,15 @@ using Buffering.SingleBuffering;
 
 var buffer = new SingleBuffer<BufferValues>(
     new BufferingResource<BufferValues>(
-        () => default,
-        (ref BufferValues values, bool _) =>
-        {
-            values.N += 1;
-            values.F += 0.5f;
-            values.L += 2L;
-        },
-        new MonitorLock()));
+        new BufferingResourceConfiguration<BufferValues>(
+            (out BufferValues rsc) => rsc = new BufferValues(0, 0F, 0L),
+            (ref BufferValues rsc, bool _) =>
+            {
+                rsc.N += 1;
+                rsc.F += 0.5F;
+                rsc.L += 2L;
+            },
+            new MonitorLock())));
 
 var cts = new CancellationTokenSource(10_000);
 

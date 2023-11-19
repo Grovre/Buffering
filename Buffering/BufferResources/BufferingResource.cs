@@ -12,9 +12,12 @@ public class BufferingResource<T>
 {
     /// <summary>
     /// The functionality for updating the resource.
-    /// Includes a boolean for determining whether the resource was updated by a previous call from the resource updater or not
+    /// Includes a boolean for determining whether the resource was updated by a previous call from the resource updater or not.
+    /// Never lock on objects outside of the function as this function may be shared between more resources.
     /// </summary>
     public delegate void ResourceUpdater(ref T rsc, bool fromUpdater);
+    
+    public delegate void Initializer(out T rsc);
 
     /// <summary>
     /// If the resource type is or contains reference type member variables, this is true
@@ -30,22 +33,20 @@ public class BufferingResource<T>
     /// The object represented by this resource
     /// </summary>
     public T Resource => _resource;
-    private readonly ResourceUpdater _updater;
-    private readonly Func<T> _init;
-    private readonly IResourceLock _lock;
+
+    private readonly BufferingResourceConfiguration<T> _config;
 
     /// <summary>
     /// Normal constructor. Resource is initialized to what init returns and IsResourceFromUpdater is initialized to false.
     /// </summary>
     /// <param name="init">Initial value for the resource</param>
     /// <param name="updater">Resource object updater</param>
-    public BufferingResource(Func<T> init, ResourceUpdater updater, IResourceLock rscLock)
+    public BufferingResource(BufferingResourceConfiguration<T> configuration)
     {
-        IsResourceFromUpdater = false;
-        _init = init;
-        _resource = init();
-        _updater = updater;
-        _lock = rscLock;
+        _config = new BufferingResourceConfiguration<T>(
+            configuration.Init,
+            configuration.Updater,
+            configuration.ResourceLock.Copy());
     }
 
     /// <summary>
@@ -56,23 +57,19 @@ public class BufferingResource<T>
     /// <param name="other">Resource to copy from</param>
     public BufferingResource(BufferingResource<T> other)
     {
-        IsResourceFromUpdater = false;
-        _init = other._init;
-        _resource = _init();
-        _updater = other._updater;
-        _lock = other._lock.Copy();
+        _config = other._config;
     }
     
     #region LockingMechanisms
 
-    internal ResourceLockHandle Lock(ResourceAccessFlag flags)
+    public ResourceLockHandle Lock(ResourceAccessFlag flags)
     {
-        return _lock.Lock(flags);
+        return _config.ResourceLock.Lock(flags);
     }
 
-    internal bool TryLock(ResourceAccessFlag flags, out ResourceLockHandle hlock)
+    public bool TryLock(ResourceAccessFlag flags, out ResourceLockHandle hlock)
     {
-        return _lock.TryLock(flags, out hlock);
+        return _config.ResourceLock.TryLock(flags, out hlock);
     }
 
     #endregion
@@ -83,7 +80,7 @@ public class BufferingResource<T>
     /// </summary>
     public void UpdateResource()
     {
-        _updater(ref _resource, IsResourceFromUpdater);
+        _config.Updater(ref _resource, IsResourceFromUpdater);
         IsResourceFromUpdater = true;
     }
 
