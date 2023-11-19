@@ -4,8 +4,6 @@ using System.Numerics;
 using Buffering.DoubleBuffers;
 using Buffering.Locking.Locks;
 
-Console.WriteLine("Bruh");
-
 var db = new DoubleBuffer<Vector3>(
     rsc: new BufferingResource<Vector3>(
         init: () => Vector3.Zero,
