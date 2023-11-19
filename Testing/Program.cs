@@ -19,10 +19,11 @@ var cts = new CancellationTokenSource(10_000);
 var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).StartNew(() =>
 {
     var token = cts.Token;
+    var controller = db.BackController;
     while (!token.IsCancellationRequested)
     {
-        db.UpdateBackBuffer();
-        db.SwapBuffers();
+        controller.UpdateBackBuffer();
+        controller.SwapBuffers();
     }
 });
 

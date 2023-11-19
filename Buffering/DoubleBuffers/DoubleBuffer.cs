@@ -17,6 +17,8 @@ public class DoubleBuffer<T>
     private ResourceInfo _frontInfo;
     private readonly DoubleBufferSwapEffect _swapEffect;
 
+    public DoubleBufferBackController<T> BackController => new DoubleBufferBackController<T>(this);
+
     /// <summary>
     /// Constructs the double buffer accordingly.
     /// </summary>
@@ -54,7 +56,7 @@ public class DoubleBuffer<T>
     /// to maximize throughput.
     /// The back buffer IS NOT THREADSAFE. No locking or synchronization is done.
     /// </summary>
-    public void UpdateBackBuffer()
+    internal void UpdateBackBuffer()
     {
         _rsc1.UpdateResource();
     }
@@ -67,7 +69,7 @@ public class DoubleBuffer<T>
     /// This maximizes throughput anyways.
     /// </summary>
     /// <exception cref="Exception">Unknown/unsupported swap effect</exception>
-    public void SwapBuffers()
+    internal void SwapBuffers()
     {
         var nextInfo = PrepareNextInfoOnSwap();
 
