@@ -13,9 +13,8 @@ public class DoubleBuffer<T>
     // originally from array but remove extra pointer deref
     private BufferingResource<T> _rsc0; // front
     private BufferingResource<T> _rsc1; // back
-    private readonly IBufferLock _lock;
     private ResourceInfo _frontInfo;
-    private readonly DoubleBufferSwapEffect _swapEffect;
+    private readonly DoubleBufferConfiguration _config;
 
     public DoubleBufferFrontReader<T> FrontReader => new(this);
     public DoubleBufferBackController<T> BackController => new(this);
@@ -27,12 +26,10 @@ public class DoubleBuffer<T>
     /// <param name="configuration">Sets up how the double buffer will run. If null, uses default configuration</param>
     public DoubleBuffer(in BufferingResource<T> rsc, DoubleBufferConfiguration? configuration = null)
     {
-        configuration ??= DoubleBufferConfiguration.Default;
-        _lock = configuration.LockImpl;
+        _config = configuration ?? DoubleBufferConfiguration.Default;
         _rsc0 = new BufferingResource<T>(rsc);
         _rsc1 = new BufferingResource<T>(rsc);
         _frontInfo = default;
-        _swapEffect = configuration.SwapEffect;
     }
     
     /// <summary>
@@ -44,7 +41,7 @@ public class DoubleBuffer<T>
     /// <returns>LockHandle to be disposed of immediately after reading/writing the buffer. This should be done ASAP</returns>
     internal LockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
     {
-        var hlock = _lock.Lock(BufferAccessFlag.Read);
+        var hlock = _config.LockImpl.Lock(BufferAccessFlag.Read);
         rsc = _rsc0.Resource;
         info = _frontInfo;
         return hlock;
@@ -73,10 +70,10 @@ public class DoubleBuffer<T>
     {
         var nextInfo = PrepareNextInfoOnSwap();
 
-        switch (_swapEffect)
+        switch (_config.SwapEffect)
         {
             case DoubleBufferSwapEffect.Flip:
-                var hlock1 = _lock.Lock(BufferAccessFlag.Write);
+                var hlock1 = _config.LockImpl.Lock(BufferAccessFlag.Write);
                 var t = _rsc0;
                 _rsc0 = _rsc1;
                 _frontInfo = nextInfo;
@@ -85,7 +82,7 @@ public class DoubleBuffer<T>
                 break;
             
             case DoubleBufferSwapEffect.Copy:
-                var hlock2 = _lock.Lock(BufferAccessFlag.Write);
+                var hlock2 = _config.LockImpl.Lock(BufferAccessFlag.Write);
                 _rsc0.CopyFromResource(_rsc1);
                 _frontInfo = nextInfo;
                 hlock2.Dispose();
