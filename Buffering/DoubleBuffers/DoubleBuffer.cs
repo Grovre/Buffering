@@ -50,7 +50,6 @@ public class DoubleBuffer<T>
         return hlock;
     }
 
-    // TODO: DoubleBuffer updater class
     /// <summary>
     /// Updates the back buffer by updating the resource.
     /// Should be called before swapping the buffers and on a dedicated back buffer thread
