@@ -25,8 +25,9 @@ var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).Start
     }
 });
 
+var reader = db.FrontReader;
 while (!bufferUpdateTask.IsCompleted)
 {
-    db.ReadFrontBuffer(out var rsc, out var rscInfo).Dispose();
+    reader.ReadFrontBuffer(out var rsc, out var rscInfo).Dispose();
     Console.WriteLine($"{rscInfo.Id:N0}: {rsc} : {rscInfo}");
 }

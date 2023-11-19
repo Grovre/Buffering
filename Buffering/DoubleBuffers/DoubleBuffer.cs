@@ -17,7 +17,8 @@ public class DoubleBuffer<T>
     private ResourceInfo _frontInfo;
     private readonly DoubleBufferSwapEffect _swapEffect;
 
-    public DoubleBufferBackController<T> BackController => new DoubleBufferBackController<T>(this);
+    public DoubleBufferFrontReader<T> FrontReader => new(this);
+    public DoubleBufferBackController<T> BackController => new(this);
 
     /// <summary>
     /// Constructs the double buffer accordingly.
@@ -41,7 +42,7 @@ public class DoubleBuffer<T>
     /// <param name="rsc">Ref variable to read the buffer to</param>
     /// <param name="info">Minimal information about the current front buffer object</param>
     /// <returns>LockHandle to be disposed of immediately after reading/writing the buffer. This should be done ASAP</returns>
-    public LockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
+    internal LockHandle ReadFrontBuffer(out T rsc, out ResourceInfo info)
     {
         var hlock = _lock.Lock(BufferAccessFlag.Read);
         rsc = _rsc0.Resource;

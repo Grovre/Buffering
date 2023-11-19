@@ -1,5 +1,9 @@
 ﻿namespace Buffering.DoubleBuffers;
 
+/// <summary>
+/// Used to control the back buffer of a double buffer
+/// </summary>
+/// <typeparam name="T">The type in the double buffer</typeparam>
 public readonly struct DoubleBufferBackController<T>
     where T : struct
 {
