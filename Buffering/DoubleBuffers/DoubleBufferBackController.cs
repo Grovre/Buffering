@@ -1,20 +1,10 @@
 ﻿namespace Buffering.DoubleBuffers;
 
-public struct DoubleBufferBackController<T>
+public readonly struct DoubleBufferBackController<T>
     where T : struct
 {
-    public DoubleBuffer<T> DoubleBuffer { get; private set; }
-
-    public void UpdateBackBuffer()
-    {
-        DoubleBuffer.UpdateBackBuffer();
-    }
-
-    public void SwapBuffers()
-    {
-        DoubleBuffer.SwapBuffers();
-    }
-
+    public DoubleBuffer<T> DoubleBuffer { get; }
+    
     public DoubleBufferBackController(DoubleBuffer<T> doubleBuffer)
     {
         DoubleBuffer = doubleBuffer;
@@ -24,5 +14,15 @@ public struct DoubleBufferBackController<T>
     {
         throw new NotImplementedException(
             "Back controller must be retrieved through a double buffer.");
+    }
+
+    public void UpdateBackBuffer()
+    {
+        DoubleBuffer.UpdateBackBuffer();
+    }
+
+    public void SwapBuffers()
+    {
+        DoubleBuffer.SwapBuffers();
     }
 }
