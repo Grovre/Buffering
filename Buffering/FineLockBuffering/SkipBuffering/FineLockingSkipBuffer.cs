@@ -18,10 +18,35 @@ public class FineLockingSkipBuffer<T, TUpdaterState>
                 "There must be at least 1 resource");
         
         _index = -1; // Start at 0
-        _resources = new BufferResource<T, TUpdaterState>[resources.Length];
-        for (var i = 0; i < resources.Length; i++)
-            _resources[i] = new BufferResource<T, TUpdaterState>(resources[i]);
+        _resources = resources;
         _infos = new BufferedResourceInfo[_resources.Length];
+    }
+
+    private ResourceLockHandle LockNextAvailableBuffer(out int index)
+    {
+        while (true)
+        {
+            // _index will eventually overflow and skip a few elements
+            // for the sake of allowing parallel readings without locking
+            // on the index to increment and set back to 0 at capacity.
+            // It's all atomic. It's not undefined behavior
+            var i = (int)((uint)Interlocked.Increment(ref _index) % (uint)_resources.Length);
+            var rsc = _resources[i];
+            
+            var locked = rsc.TryLock(ResourceAccessFlag.Write, out var hlock);
+            if (!locked)
+                continue;
+
+            index = i;
+            return hlock;
+        }
+    }
+
+    public void UpdateNextUnlockedBuffer(TUpdaterState state)
+    {
+        using var hlock = LockNextAvailableBuffer(out var i);
+        _resources[i].UpdateResource(state);
+        _infos[i] = BufferedResourceInfo.PrepareNextInfo(_infos[i], true);
     }
 
     public bool TryUpdate(int index, TUpdaterState state)
@@ -31,32 +56,18 @@ public class FineLockingSkipBuffer<T, TUpdaterState>
         if (!locked)
             return false;
 
-        rsc.UpdaterState = state;
-        rsc.UpdateResource();
+        rsc.UpdateResource(state);
         _infos[index] = BufferedResourceInfo.PrepareNextInfo(_infos[index], true);
         
         hlock.Dispose();
         return true;
     }
 
-    public ResourceLockHandle GetNext(out T rscObject, out BufferedResourceInfo info)
+    public ResourceLockHandle ReadNextUnlockedBuffer(out T rscObject, out BufferedResourceInfo info)
     {
-        while (true)
-        {
-            // _index will eventually overflow and skip a few elements
-            // for the sake of no locking on the index. It will happen very infrequently.
-            // It's not undefined behavior
-            var i = (uint)Interlocked.Increment(ref _index) % (uint)_resources.Length;
-            var rsc = _resources[i];
-            
-            var locked = rsc.TryLock(ResourceAccessFlag.Write, out var hlock);
-            if (!locked)
-                continue;
-
-            rscObject = rsc.Resource;
-            info = _infos[i];
-            
-            return hlock;
-        }
+        var hlock = LockNextAvailableBuffer(out var i);
+        rscObject = _resources[i].Resource;
+        info = _infos[i];
+        return hlock;
     }
 }
