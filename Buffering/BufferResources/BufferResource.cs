@@ -41,7 +41,7 @@ public class BufferResource<T, TUpdaterState>
     /// State passed into the updater to avoid capturing
     /// </summary>
 
-    private readonly BufferResourceConfiguration<T, TUpdaterState> _config;
+    internal readonly BufferResourceConfiguration<T, TUpdaterState> Config;
 
     /// <summary>
     /// Normal constructor. Resource is initialized to what init returns and IsResourceFromUpdater is initialized to false.
@@ -50,7 +50,7 @@ public class BufferResource<T, TUpdaterState>
     /// <param name="updater">Resource object updater</param>
     public BufferResource(BufferResourceConfiguration<T, TUpdaterState> configuration)
     {
-        _config = new BufferResourceConfiguration<T, TUpdaterState>(
+        Config = new BufferResourceConfiguration<T, TUpdaterState>(
             configuration.Init,
             configuration.Updater,
             configuration.ResourceLock.Copy());
@@ -64,21 +64,21 @@ public class BufferResource<T, TUpdaterState>
     /// <param name="other">Resource to copy from</param>
     public BufferResource(BufferResource<T, TUpdaterState> other, bool skipInit = false)
     {
-        _config = other._config;
+        Config = other.Config;
         if (!skipInit)
-            _config.Init(out _resource);
+            Config.Init(out _resource);
     }
     
     #region LockingMechanisms
 
     public ResourceLockHandle Lock(ResourceAccessFlag flags)
     {
-        return _config.ResourceLock.Lock(flags);
+        return Config.ResourceLock.Lock(flags);
     }
 
     public bool TryLock(ResourceAccessFlag flags, out ResourceLockHandle hlock)
     {
-        return _config.ResourceLock.TryLock(flags, out hlock);
+        return Config.ResourceLock.TryLock(flags, out hlock);
     }
 
     #endregion
@@ -89,7 +89,7 @@ public class BufferResource<T, TUpdaterState>
     /// </summary>
     public void UpdateResource(TUpdaterState state)
     {
-        _config.Updater(ref _resource, IsResourceFromUpdater, state);
+        Config.Updater(ref _resource, IsResourceFromUpdater, state);
         IsResourceFromUpdater = true;
     }
 
