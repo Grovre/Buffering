@@ -17,34 +17,36 @@ for (var i = 0; i < resources.Length; i++)
 
 var tf = new TaskFactory(TaskCreationOptions.LongRunning, 0);
 var skipBuffer = new FineLockingSkipBuffer<Vector3, Vector3>(resources);
+
 var cts = new CancellationTokenSource(10_000);
 
-var writerTasks = Enumerable.Range(0, 2)
-    .Select(half =>
+var writerTasks = Enumerable.Range(0, resources.Length)
+    .Select(i =>
     {
         return tf.StartNew(() =>
         {
             var token = cts.Token;
+            var updater = skipBuffer.Updater;
+            var j = i;
             while (!token.IsCancellationRequested)
             {
-                for (var i = resources.Length / 2 * half; i < resources.Length / (half == 1 ? 1 : 2); i++)
-                {
-                    skipBuffer.TryUpdate(i, Vector3.One);
-                }
+                updater.TryUpdate(j, Vector3.One);
             }
         });
     }).ToArray();
 
-var readerTasks = Enumerable.Range(0, 3)
-    .Select(_ => tf.StartNew(() =>
-    {
-        var token = cts.Token;
-        while (!token.IsCancellationRequested)
-        {
-            skipBuffer.GetNext(out var rsc, out var info).Dispose();
-            Console.WriteLine($"{info.Id}: {rsc}");
-        }
-    })).ToArray();
-    
-    Task.WaitAll(writerTasks);
-    Task.WaitAll(readerTasks);
+while (Array.Exists(writerTasks, t => !t.IsCompleted))
+{
+    Thread.Sleep(990);
+    skipBuffer.ReadNextUnlockedBuffer(out var rsc, out var info).Dispose();
+    Console.WriteLine($"{info}: {rsc}");
+}
+
+var sum = 0;
+for (var i = 0; i < resources.Length; i++)
+{
+    skipBuffer.ReadNextUnlockedBuffer(out _, out var info);
+    sum += (int)info.Id;
+}
+
+Console.WriteLine($"Total writes: {sum:N0}");
