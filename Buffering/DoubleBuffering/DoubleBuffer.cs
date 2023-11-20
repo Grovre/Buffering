@@ -56,8 +56,7 @@ public class DoubleBuffer<T, TUpdaterState>
     /// </summary>
     internal void UpdateBackBuffer(TUpdaterState state)
     {
-        _rsc1.UpdaterState = state;
-        _rsc1.UpdateResource();
+        _rsc1.UpdateResource(state);
     }
     
     /// <summary>

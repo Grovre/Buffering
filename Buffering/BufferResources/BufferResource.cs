@@ -40,7 +40,6 @@ public class BufferResource<T, TUpdaterState>
     /// <summary>
     /// State passed into the updater to avoid capturing
     /// </summary>
-    public TUpdaterState UpdaterState { get; set; }
 
     private readonly BufferResourceConfiguration<T, TUpdaterState> _config;
 
@@ -88,9 +87,9 @@ public class BufferResource<T, TUpdaterState>
     /// Uses the updater to update the resource object.
     /// IsResourceFromUpdater becomes true.
     /// </summary>
-    public void UpdateResource()
+    public void UpdateResource(TUpdaterState state)
     {
-        _config.Updater(ref _resource, IsResourceFromUpdater, UpdaterState);
+        _config.Updater(ref _resource, IsResourceFromUpdater, state);
         IsResourceFromUpdater = true;
     }
 

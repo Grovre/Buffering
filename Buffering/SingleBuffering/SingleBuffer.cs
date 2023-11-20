@@ -30,8 +30,7 @@ public class SingleBuffer<T, TUpdaterState>
     public void UpdateBuffer(TUpdaterState state)
     {
         using var hlock = _rsc.Lock(ResourceAccessFlag.Read);
-        _rsc.UpdaterState = state;
-        _rsc.UpdateResource();
+        _rsc.UpdateResource(state);
         _info = BufferedResourceInfo.PrepareNextInfo(_info, true);
     }
 }
