@@ -12,7 +12,7 @@ public readonly struct DoubleBufferBackController<T, TUpdaterState>
     /// <summary>
     /// The double buffer this is controlling
     /// </summary>
-    public DoubleBuffer<T, TUpdaterState> DoubleBuffer { get; }
+    private readonly DoubleBuffer<T, TUpdaterState> _doubleBuffer;
     
     /// <summary>
     /// Should be used to retrieve a double buffer,
@@ -21,7 +21,7 @@ public readonly struct DoubleBufferBackController<T, TUpdaterState>
     /// <param name="doubleBuffer">DoubleBuffer to control</param>
     public DoubleBufferBackController(DoubleBuffer<T, TUpdaterState> doubleBuffer)
     {
-        DoubleBuffer = doubleBuffer;
+        _doubleBuffer = doubleBuffer;
     }
 
     /// <summary>
@@ -37,12 +37,12 @@ public readonly struct DoubleBufferBackController<T, TUpdaterState>
     /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.UpdateBackBuffer"/>
     public void UpdateBackBuffer(TUpdaterState state)
     {
-        DoubleBuffer.UpdateBackBuffer(state);
+        _doubleBuffer.UpdateBackBuffer(state);
     }
 
     /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.SwapBuffers"/>
     public void SwapBuffers()
     {
-        DoubleBuffer.SwapBuffers();
+        _doubleBuffer.SwapBuffers();
     }
 }
