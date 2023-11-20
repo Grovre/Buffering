@@ -9,6 +9,11 @@ namespace Buffering.Locking.Locks;
 /// </summary>
 public class MultipleReaderLock : IResourceLock
 {
+    public event EventHandler? Locking;
+    public event EventHandler? AfterLocked;
+    public event EventHandler? Unlocking;
+    public event EventHandler? AferUnlocked;
+
     private readonly ReaderWriterLockSlim _lock = new();
 
     public ResourceLockHandle Lock(ResourceAccessFlag flags = ResourceAccessFlag.Generic)
@@ -30,18 +35,22 @@ public class MultipleReaderLock : IResourceLock
     {
         // TODO: support
         throw new NotImplementedException(
-            "Lazy, I'll come back to this");
+            "Trying to lock is not supported.");
     }
 
     public ResourceLockHandle ReadLock()
     {
+        Locking?.Invoke(this, EventArgs.Empty);
         _lock.EnterReadLock();
+        AfterLocked?.Invoke(this, EventArgs.Empty);
         return new ResourceLockHandle(this, ResourceAccessFlag.Read);
     }
 
     public ResourceLockHandle WriteLock()
     {
+        Locking?.Invoke(this, EventArgs.Empty);
         _lock.EnterWriteLock();
+        AfterLocked?.Invoke(this, EventArgs.Empty);
         return new ResourceLockHandle(this, ResourceAccessFlag.Write);
     }
 
@@ -50,12 +59,14 @@ public class MultipleReaderLock : IResourceLock
         if (hlock.Owner != this)
             throw new AuthenticationException(IResourceLock.BadOwnerExceptionMessage);
         
+        Unlocking?.Invoke(this, EventArgs.Empty);
         if ((hlock.AccessFlags & ResourceAccessFlag.Write) != 0)
             _lock.ExitWriteLock();
         else if ((hlock.AccessFlags & ResourceAccessFlag.Read) != 0)
             _lock.ExitReadLock();
         else
             throw new NotSupportedException("Lock must be a write or read lock");
+        AferUnlocked?.Invoke(this, EventArgs.Empty);
     }
 
     public IResourceLock Copy()

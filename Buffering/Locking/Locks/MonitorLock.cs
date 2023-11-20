@@ -10,17 +10,28 @@ namespace Buffering.Locking.Locks;
 public class MonitorLock : IResourceLock
 {
     // TODO: Use dedicated private lock object
-    
+
+    public event EventHandler? Locking;
+    public event EventHandler? AfterLocked;
+    public event EventHandler? Unlocking;
+    public event EventHandler? AferUnlocked;
+
     public ResourceLockHandle Lock(ResourceAccessFlag flags = ResourceAccessFlag.Generic)
     {
+        Locking?.Invoke(this, EventArgs.Empty);
         Monitor.Enter(this);
+        AfterLocked?.Invoke(this, EventArgs.Empty);
         return new ResourceLockHandle(this, ResourceAccessFlag.Generic);
     }
 
     public bool TryLock(ResourceAccessFlag flags, out ResourceLockHandle hlock)
     {
         hlock = new ResourceLockHandle(this, flags);
-        return Monitor.TryEnter(this);
+        Locking?.Invoke(this, EventArgs.Empty);
+        var attempt = Monitor.TryEnter(this);
+        if (attempt)
+            AfterLocked?.Invoke(this, EventArgs.Empty);
+        return attempt;
     }
 
     public void Unlock(ResourceLockHandle hlock)
@@ -28,7 +39,9 @@ public class MonitorLock : IResourceLock
         if (hlock.Owner != this)
             throw new AuthenticationException(IResourceLock.BadOwnerExceptionMessage);
         
+        Unlocking?.Invoke(this, EventArgs.Empty);
         Monitor.Exit(this);
+        AferUnlocked?.Invoke(this, EventArgs.Empty);
     }
 
     public IResourceLock Copy()
