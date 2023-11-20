@@ -10,6 +10,8 @@ public class FineLockingSkipBuffer<T, TUpdaterState>
     private readonly BufferResource<T, TUpdaterState>[] _resources;
     private volatile int _index;
 
+    public SkipBufferIncomingUpdater<T, TUpdaterState> Updater => new(this);
+
     public FineLockingSkipBuffer(params BufferResource<T, TUpdaterState>[] resources)
     {
         if (resources.Length == 0)
@@ -42,14 +44,14 @@ public class FineLockingSkipBuffer<T, TUpdaterState>
         }
     }
 
-    public void UpdateNextUnlockedBuffer(TUpdaterState state)
+    internal void UpdateNextUnlockedBuffer(TUpdaterState state)
     {
         using var hlock = LockNextAvailableBuffer(out var i);
         _resources[i].UpdateResource(state);
         _infos[i] = BufferedResourceInfo.PrepareNextInfo(_infos[i], true);
     }
 
-    public bool TryUpdate(int index, TUpdaterState state)
+    internal bool TryUpdate(int index, TUpdaterState state)
     {
         var rsc = _resources[index];
         var locked = rsc.TryLock(ResourceAccessFlag.Write, out var hlock);
