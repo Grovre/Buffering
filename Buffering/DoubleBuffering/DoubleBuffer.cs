@@ -5,9 +5,11 @@ using Buffering.Locking;
 namespace Buffering.DoubleBuffering;
 
 /// <summary>
-/// A double buffer
+/// A type of buffer that minimizes locking times during front buffer updates.
+/// The back buffer should be updated concurrently with a back buffer controller.
 /// </summary>
 /// <typeparam name="T">Value type in the buffer</typeparam>
+/// <typeparam name="TUpdaterState">Type of object used for state in the updater delegate</typeparam>
 public class DoubleBuffer<T, TUpdaterState>
     where T : struct
 {
@@ -17,7 +19,15 @@ public class DoubleBuffer<T, TUpdaterState>
     private BufferedResourceInfo _frontInfo;
     private readonly DoubleBufferConfiguration _config;
 
+    /// <summary>
+    /// Used to create a local value to read the front buffer from.
+    /// Using this locally can provide great performance benefits.
+    /// </summary>
     public DoubleBufferFrontReader<T, TUpdaterState> FrontReader => new(this);
+    /// <summary>
+    /// Used to create a local value to update and swap the back buffer.
+    /// Using this locally can provide great performance benefits.
+    /// </summary>
     public DoubleBufferBackController<T, TUpdaterState> BackController => new(this);
 
     /// <summary>
@@ -42,7 +52,7 @@ public class DoubleBuffer<T, TUpdaterState>
     /// <returns>ResourceLockHandle to be disposed of immediately after reading/writing the buffer. This should be done ASAP</returns>
     internal ResourceLockHandle ReadFrontBuffer(out T rsc, out BufferedResourceInfo info)
     {
-        var hlock = _rsc0.Lock(ResourceAccessFlag.Read);
+        var hlock = _rsc0.Lock(ResourceAccessFlags.Read);
         rsc = _rsc0.Resource;
         info = _frontInfo;
         return hlock;
@@ -52,7 +62,7 @@ public class DoubleBuffer<T, TUpdaterState>
     /// Updates the back buffer by updating the resource.
     /// Should be called before swapping the buffers and on a dedicated back buffer thread
     /// to maximize throughput.
-    /// The back buffer IS NOT THREADSAFE. No locking or synchronization is done.
+    /// The back buffer IS NOT THREAD SAFE. No locking or synchronization is done.
     /// </summary>
     internal void UpdateBackBuffer(TUpdaterState state)
     {
@@ -63,7 +73,7 @@ public class DoubleBuffer<T, TUpdaterState>
     /// Swaps the buffers with functionality according to the configured swap effect (default is flip).
     /// Should be called after updating the back buffer.
     /// All reads immediately after every swap are on the correct resource in the front buffer.
-    /// The back buffer IS NOT THREADSAFE. No locking or synchronization is done. Must be called on a dedicated back buffer update thread.
+    /// The back buffer IS NOT THREAD SAFE. No locking or synchronization is done. Must be called on a dedicated back buffer update thread.
     /// This maximizes throughput anyways.
     /// </summary>
     /// <exception cref="Exception">Unknown/unsupported swap effect</exception>
@@ -74,7 +84,7 @@ public class DoubleBuffer<T, TUpdaterState>
         switch (_config.SwapEffect)
         {
             case DoubleBufferSwapEffect.Flip:
-                var hlock1 = _rsc0.Lock(ResourceAccessFlag.Write);
+                var hlock1 = _rsc0.Lock(ResourceAccessFlags.Write);
                 var t = _rsc0;
                 _rsc0 = _rsc1;
                 _frontInfo = nextInfo;
@@ -83,7 +93,7 @@ public class DoubleBuffer<T, TUpdaterState>
                 break;
             
             case DoubleBufferSwapEffect.Copy:
-                var hlock2 = _rsc0.Lock(ResourceAccessFlag.Write);
+                var hlock2 = _rsc0.Lock(ResourceAccessFlags.Write);
                 _rsc0.CopyFromResource(_rsc1);
                 _frontInfo = nextInfo;
                 hlock2.Dispose();

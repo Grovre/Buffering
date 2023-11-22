@@ -7,23 +7,29 @@ namespace Buffering.Locking.Locks;
 /// </summary>
 public class SpinnerLock : IResourceLock
 {
+    /// <inheritdoc />
     public event EventHandler? Locking;
+    /// <inheritdoc />
     public event EventHandler? AfterLocked;
+    /// <inheritdoc />
     public event EventHandler? Unlocking;
-    public event EventHandler? AferUnlocked;
+    /// <inheritdoc />
+    public event EventHandler? AfterUnlocked;
 
     private SpinLock _lock = new(false);
     
-    public ResourceLockHandle Lock(ResourceAccessFlag flags = ResourceAccessFlag.Generic)
+    /// <inheritdoc />
+    public ResourceLockHandle Lock(ResourceAccessFlags flags)
     {
         Locking?.Invoke(this, EventArgs.Empty);
         var lockTaken = false;
         _lock.TryEnter(10_000, ref lockTaken);
         AfterLocked?.Invoke(this, EventArgs.Empty);
-        return new ResourceLockHandle(this, ResourceAccessFlag.Generic);
+        return new ResourceLockHandle(this, ResourceAccessFlags.Generic);
     }
 
-    public bool TryLock(ResourceAccessFlag flags, out ResourceLockHandle hlock)
+    /// <inheritdoc />
+    public bool TryLock(ResourceAccessFlags flags, out ResourceLockHandle hlock)
     {
         Locking?.Invoke(this, EventArgs.Empty);
         var lockTaken = false;
@@ -34,6 +40,7 @@ public class SpinnerLock : IResourceLock
         return lockTaken;
     }
 
+    /// <inheritdoc />
     public void Unlock(ResourceLockHandle hlock)
     {
         if (hlock.Owner != this)
@@ -41,9 +48,10 @@ public class SpinnerLock : IResourceLock
 
         Unlocking?.Invoke(this, EventArgs.Empty);
         _lock.Exit();
-        AferUnlocked?.Invoke(this, EventArgs.Empty);
+        AfterUnlocked?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <inheritdoc />
     public IResourceLock Copy()
     {
         return new SpinnerLock();

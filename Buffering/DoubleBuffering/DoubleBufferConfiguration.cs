@@ -17,10 +17,14 @@ public class DoubleBufferConfiguration : BufferConfiguration
         => new(DoubleBufferSwapEffect.Flip);
     
     /// <summary>
-    /// Swap effect to be used with the double buffer
+    /// Swap effect to be used with the double buffer <see cref="DoubleBufferSwapEffect"/>
     /// </summary>
     public DoubleBufferSwapEffect SwapEffect { get; }
     
+    /// <summary>
+    /// Allargs constructor for making a configuration
+    /// </summary>
+    /// <param name="swapEffect">The swap effect to use</param>
     public DoubleBufferConfiguration(DoubleBufferSwapEffect swapEffect)
     {
         SwapEffect = swapEffect;

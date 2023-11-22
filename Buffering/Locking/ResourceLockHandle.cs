@@ -9,18 +9,24 @@
 public readonly struct ResourceLockHandle : IDisposable
 {
     internal IResourceLock Owner { get; }
-    public ResourceAccessFlag AccessFlags { get; }
+    /// <summary>
+    /// The access flags used to lock the resource with.
+    /// </summary>
+    public ResourceAccessFlags AccessFlags { get; }
 
-    internal ResourceLockHandle(IResourceLock owner, ResourceAccessFlag accessFlags)
+    internal ResourceLockHandle(IResourceLock owner, ResourceAccessFlags accessFlags)
     {
         Owner = owner;
         AccessFlags = accessFlags;
     }
 
+    /// <summary>
+    /// Do not use.
+    /// </summary>
+    /// <exception cref="NotImplementedException">When invoked</exception>
     public ResourceLockHandle()
     {
         throw new NotImplementedException();
-        // TODO: NoLock
     }
 
     /// <summary>
