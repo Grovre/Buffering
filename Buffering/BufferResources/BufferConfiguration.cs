@@ -1,6 +1,4 @@
-﻿using Buffering.Locking;
-
-namespace Buffering;
+﻿namespace Buffering.BufferResources;
 
 /// <summary>
 /// Abstract type that all buffer configurations are based off of.
