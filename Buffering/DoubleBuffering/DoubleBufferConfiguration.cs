@@ -10,14 +10,6 @@ namespace Buffering.DoubleBuffering;
 public class DoubleBufferConfiguration : BufferConfiguration
 {
     /// <summary>
-    ///  Default configuration.
-    /// Uses a MultipleReaderLock in case more than one thread is reading the front buffer.
-    /// Uses the flip swap effect to minimize swap time and that structs do not need to be copied in most cases.
-    /// </summary>
-    public static DoubleBufferConfiguration Default
-        => new(DoubleBufferSwapEffect.Flip);
-    
-    /// <summary>
     /// Swap effect to be used with the double buffer
     /// </summary>
     public DoubleBufferSwapEffect SwapEffect { get; }

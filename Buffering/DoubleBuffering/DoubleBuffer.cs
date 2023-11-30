@@ -27,7 +27,7 @@ public class DoubleBuffer<T, TUpdaterState>
     /// <param name="configuration">Sets up how the double buffer will run. If null, uses default configuration</param>
     public DoubleBuffer(in BufferResource<T, TUpdaterState> rsc, DoubleBufferConfiguration? configuration = null)
     {
-        _config = configuration ?? DoubleBufferConfiguration.Default;
+        _config = configuration ?? new DoubleBufferConfiguration(DoubleBufferSwapEffect.Flip);
         _rsc0 = new BufferResource<T, TUpdaterState>(rsc);
         _rsc1 = new BufferResource<T, TUpdaterState>(rsc);
         _frontInfo = default;
