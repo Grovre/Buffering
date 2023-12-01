@@ -7,6 +7,7 @@ namespace Buffering.BufferResources;
 /// An object representing a resource object in a buffer
 /// </summary>
 /// <typeparam name="T">Value type of resource object</typeparam>
+/// <typeparam name="TUpdaterState">Type of object used for state in the updater delegate</typeparam>
 public class BufferResource<T, TUpdaterState>
     where T : struct
 {
@@ -46,8 +47,7 @@ public class BufferResource<T, TUpdaterState>
     /// <summary>
     /// Normal constructor. Resource is initialized to what init returns and IsResourceFromUpdater is initialized to false.
     /// </summary>
-    /// <param name="init">Initial value for the resource</param>
-    /// <param name="updater">Resource object updater</param>
+    /// <param name="configuration">How the resource should be configured</param>
     public BufferResource(BufferResourceConfiguration<T, TUpdaterState> configuration)
     {
         Config = new BufferResourceConfiguration<T, TUpdaterState>(
@@ -62,6 +62,7 @@ public class BufferResource<T, TUpdaterState>
     /// not be assigned to the other's resource object
     /// </summary>
     /// <param name="other">Resource to copy from</param>
+    /// <param name="skipInit">If enabled, resource is not initialized with Init delegate</param>
     public BufferResource(BufferResource<T, TUpdaterState> other, bool skipInit = false)
     {
         Config = other.Config;
@@ -71,12 +72,24 @@ public class BufferResource<T, TUpdaterState>
     
     #region LockingMechanisms
 
-    public ResourceLockHandle Lock(ResourceAccessFlag flags)
+    /// <summary>
+    /// Uses the IResourceLock to lock onto this resource.
+    /// </summary>
+    /// <param name="flags">The intent of locking onto the resource. Useful when configured with MultipleReaderLock</param>
+    /// <returns>A disposable value used to release the lock.</returns>
+    public ResourceLockHandle Lock(ResourceAccessFlags flags)
     {
         return Config.ResourceLock.Lock(flags);
     }
 
-    public bool TryLock(ResourceAccessFlag flags, out ResourceLockHandle hlock)
+    /// <summary>
+    /// Attempts to use the IResourceLock to lock onto this resource.
+    /// </summary>
+    /// <param name="flags">The intent of locking onto the resource. Useful when configured with MultipleReaderLock.
+    /// If MultipleReaderLock is used, this will only return false when resource is being written to.</param>
+    /// <param name="hlock">A disposable value used to release the lock.</param>
+    /// <returns>Whether or not the resource was locked onto</returns>
+    public bool TryLock(ResourceAccessFlags flags, out ResourceLockHandle hlock)
     {
         return Config.ResourceLock.TryLock(flags, out hlock);
     }

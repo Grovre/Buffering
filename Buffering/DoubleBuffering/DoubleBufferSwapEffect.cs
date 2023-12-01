@@ -1,5 +1,8 @@
 ﻿namespace Buffering.DoubleBuffering;
 
+/// <summary>
+/// Different types of swap effects for double buffering
+/// </summary>
 public enum DoubleBufferSwapEffect
 {
     /// <summary>

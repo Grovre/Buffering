@@ -6,6 +6,10 @@
 /// </summary>
 public abstract class BufferConfiguration
 {
+    /// <summary>
+    /// Base configuration for any buffer configuration.
+    /// Default values are used.
+    /// </summary>
     protected BufferConfiguration()
     {
     }

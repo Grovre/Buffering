@@ -6,12 +6,10 @@ namespace Buffering.DoubleBuffering;
 /// Used to control the back buffer of a double buffer
 /// </summary>
 /// <typeparam name="T">The type in the double buffer</typeparam>
+/// <typeparam name="TUpdaterState">Type of object used for state in the updater delegate</typeparam>
 public readonly struct DoubleBufferBackController<T, TUpdaterState>
     where T : struct
 {
-    /// <summary>
-    /// The double buffer this is controlling
-    /// </summary>
     private readonly DoubleBuffer<T, TUpdaterState> _doubleBuffer;
     
     /// <summary>
