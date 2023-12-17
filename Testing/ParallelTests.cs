@@ -23,6 +23,11 @@ public class ParallelTests
         Assert.That(ranges[7].Start.Value == 70 && ranges[7].End.Value == 80);
         Assert.That(ranges[8].Start.Value == 80 && ranges[8].End.Value == 90);
         Assert.That(ranges[9].Start.Value == 90 && ranges[9].End.Value == 100);
+        
+        Span<Range> ranges2 = stackalloc Range[10];
+        arr.Partition(10, ranges2);
+        
+        Assert.That(ranges.SequenceEqual(ranges2));
     }
 
     [Test]
@@ -36,5 +41,69 @@ public class ParallelTests
         Assert.That(ranges[1].Start.Value == 7 && ranges[1].End.Value == 14);
         Assert.That(ranges[2].Start.Value == 14 && ranges[2].End.Value == 21);
         Assert.That(ranges[3].Start.Value == 21 && ranges[3].End.Value == 27);
+        
+        Span<Range> ranges2 = stackalloc Range[4];
+        arr.Partition(4, ranges2);
+        
+        Assert.That(ranges.SequenceEqual(ranges2));
+    }
+
+    [Test]
+    public void ParallelizerMoreChunksThanThreads()
+    {
+        var data = new IntData[1_000_000];
+        foreach (ref var d in data.AsSpan())
+            d = new();
+        
+        var pp = new PartitionParallelizer<IntData>(
+            10, 
+            5,
+            data, 
+            d => d.N = 100);
+        pp.Start();
+        
+        pp.Join();
+        Assert.That(data.All(d => d.N == 100));
+    }
+    
+    [Test]
+    public void ParallelizerMoreThreadsThanChunks()
+    {
+        var data = new IntData[1_000_000];
+        foreach (ref var d in data.AsSpan())
+            d = new();
+        
+        var pp = new PartitionParallelizer<IntData>(
+            5, 
+            10,
+            data, 
+            d => d.N = 100);
+        pp.Start();
+        
+        pp.Join();
+        Assert.That(data.All(d => d.N == 100));
+    }
+    
+    [Test]
+    public void ParallelizerEqualChunksAndThreads()
+    {
+        var data = new IntData[1_000_000];
+        foreach (ref var d in data.AsSpan())
+            d = new();
+        
+        var pp = new PartitionParallelizer<IntData>(
+            8, 
+            8,
+            data, 
+            d => d.N = 100);
+        pp.Start();
+        
+        pp.Join();
+        Assert.That(data.All(d => d.N == 100));
+    }
+
+    private class IntData
+    {
+        public int N { get; set; } = 0;
     }
 }
