@@ -7,9 +7,5 @@ namespace Testing;
 [TestFixture]
 public class DoubleBufferTests
 {
-    [Test]
-    public void Test1()
-    {
-        
-    }
+    
 }
