@@ -29,7 +29,7 @@ public class PartitionParallelizer<T>
     private int _index = -1;
     private void InitThreads()
     {
-        Debug.Assert(_index < 0 && !_threadsInitialized);
+        Debug.Assert(_index == -1 && !_threadsInitialized);
         
         if (ThreadCount == Chunks)
         {
