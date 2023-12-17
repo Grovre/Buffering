@@ -104,6 +104,6 @@ public class ParallelTests
 
     private class IntData
     {
-        public int N { get; set; } = 0;
+        public int N { get; set; } = -1;
     }
 }
