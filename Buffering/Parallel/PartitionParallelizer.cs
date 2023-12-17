@@ -2,7 +2,7 @@
 
 namespace Buffering.Parallel;
 
-public class PartitionParallelizer<T>
+public sealed class PartitionParallelizer<T>
 {
     public delegate void ParallelRefDataHandler(ref T o);
     
