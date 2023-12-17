@@ -59,7 +59,7 @@ public class ParallelTests
             10, 
             5,
             data, 
-            d => d.N = 100);
+            (ref IntData d) => d.N = 100);
         pp.Start();
         
         pp.Join();
@@ -77,7 +77,7 @@ public class ParallelTests
             5, 
             10,
             data, 
-            d => d.N = 100);
+            (ref IntData d) => d.N = 100);
         pp.Start();
         
         pp.Join();
@@ -95,7 +95,7 @@ public class ParallelTests
             8, 
             8,
             data, 
-            d => d.N = 100);
+            (ref IntData d) => d.N = 100);
         pp.Start();
         
         pp.Join();

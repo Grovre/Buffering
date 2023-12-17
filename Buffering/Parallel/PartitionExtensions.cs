@@ -10,7 +10,8 @@ public static class PartitionExtensions
         ArgumentOutOfRangeException.ThrowIfLessThan(dst.Length, chunks);
         
         var chunkSize = (int)MathF.Ceiling((float)span.Length / chunks);
-        for (var i = 0; i < chunks - 1; i++)
+        chunks -= 1;
+        for (var i = 0; i < chunks; i++)
         {
             var chunkIndex = i * chunkSize;
             var range = chunkIndex..(chunkIndex + chunkSize);
@@ -19,7 +20,7 @@ public static class PartitionExtensions
             dst[i] = range;
         }
 
-        dst[chunks - 1] = ((chunks - 1) * chunkSize)..span.Length;
+        dst[chunks] = (chunks * chunkSize)..span.Length;
     }
 
     public static void Partition<T>(this Span<T> span, int chunks, Span<Range> dst)

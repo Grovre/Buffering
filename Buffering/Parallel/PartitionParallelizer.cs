@@ -4,18 +4,20 @@ namespace Buffering.Parallel;
 
 public class PartitionParallelizer<T>
 {
+    public delegate void ParallelRefDataHandler(ref T o);
+    
     public int Chunks { get; }
     public int ThreadCount { get; }
-    public Action<T> DataAction;
+    public ParallelRefDataHandler DataHandler;
     private readonly Thread[] _threads;
     private readonly T[] _data;
     private readonly Range[] _chunkRanges;
 
-    public PartitionParallelizer(int chunks, int threadCount, T[] data, Action<T> dataAction)
+    public PartitionParallelizer(int chunks, int threadCount, T[] data, ParallelRefDataHandler dataHandler)
     {
         Chunks = chunks;
         ThreadCount = threadCount;
-        DataAction = dataAction;
+        DataHandler = dataHandler;
         _data = data;
         _threads = new Thread[threadCount];
         _chunkRanges = _data.Partition(chunks);
@@ -37,9 +39,9 @@ public class PartitionParallelizer<T>
                 _threads[j] = new Thread(() =>
                 {
                     var range = _chunkRanges[j];
-                    foreach (var o in _data.AsSpan(range))
+                    foreach (ref var o in _data.AsSpan(range))
                     {
-                        DataAction.Invoke(o);
+                        DataHandler.Invoke(ref o);
                     }
                 });
             }
@@ -54,9 +56,9 @@ public class PartitionParallelizer<T>
                     while (i < _chunkRanges.Length)
                     {
                         var range = _chunkRanges[i];
-                        foreach (var o in _data.AsSpan(range))
+                        foreach (ref var o in _data.AsSpan(range))
                         {
-                            DataAction.Invoke(o);
+                            DataHandler.Invoke(ref o);
                         }
 
                         i = Interlocked.Increment(ref _index);
@@ -81,12 +83,14 @@ public class PartitionParallelizer<T>
 
     public void Start()
     {
+        EnsureThreadInit();
         foreach (var t in _threads)
             t.Start();
     }
 
     public void Join()
     {
+        EnsureThreadInit();
         foreach (var t in _threads)
             t.Join();
     }
