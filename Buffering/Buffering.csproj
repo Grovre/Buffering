@@ -8,17 +8,16 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>0.2.0</Version>
+        <Version>0.3.0</Version>
         <Title>Buffering</Title>
         <Description>Efficiently streamlined buffering functionality for any system</Description>
         <Copyright>MIT</Copyright>
         <RepositoryUrl>https://github.com/Grovre/Buffering</RepositoryUrl>
         <RepositoryType>Github</RepositoryType>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Authors>Grovre</Authors>
         
-        <PackageReleaseNotes>
-            Added a single buffer and full documentation
-        </PackageReleaseNotes>
+        <PackageReleaseNotes>Added data partitioning and a very easy method of parallelizing an array of data</PackageReleaseNotes>
     </PropertyGroup>
     
     <ItemGroup>
