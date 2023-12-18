@@ -1,12 +1,15 @@
 # Buffering
 This library provides very easy and streamlined functionality for implementing different kinds of buffers in any system.
-Currently, there is only a double buffer to maximize throughput between a source and destination with the most up-to-date information from the source.
+Using the package, you will have a single buffer and double buffer for wherever you need these in your code. There are
+also methods for easily partitioning data and optionally processing the partitioned data in parallel without relying
+on a task scheduler and unnecessary synchronization in most cases from the BCL-provided
+System.Threading.Tasks.Parallel class.
 
 # Threadsafe
 All buffers are implemented in a threadsafe manner using the most efficient object-oriented implementation involving a lock and handle that only needs to be disposed after you're done.
 
 # Double Buffer Example
-Here is an example of how simple it is to set up a double buffer:
+Here is an example of how simple it is to set up a double buffer. A single buffer is very similar but uses the respectively named classes:
 
 This creates a double buffer using the given configuration (yeah, multiple ways you can define how a buffer works) and a cancellation token source to define a runtime length of the program:
 ```cs

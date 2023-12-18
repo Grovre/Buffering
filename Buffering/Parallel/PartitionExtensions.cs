@@ -18,19 +18,22 @@ public static class PartitionExtensions
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(chunks);
         ArgumentOutOfRangeException.ThrowIfLessThan(dst.Length, chunks);
-        
-        var chunkSize = (int)MathF.Ceiling((float)span.Length / chunks);
-        chunks -= 1;
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(chunks, span.Length);
+
+        var chunkSize = (int)MathF.Floor((float)span.Length / chunks);
+        var remainder = span.Length % chunks;
+        Debug.Assert(chunkSize != 0);
+        var chunkIndex = 0;
         for (var i = 0; i < chunks; i++)
         {
-            var chunkIndex = i * chunkSize;
-            var range = chunkIndex..(chunkIndex + chunkSize);
+            var rangeLength = chunkSize + (i < remainder ? 1 : 0);
+            var range = chunkIndex..(chunkIndex + rangeLength);
+            
             Debug.Assert(chunkIndex < span.Length && range.End.Value <= span.Length);
 
+            chunkIndex += rangeLength;
             dst[i] = range;
         }
-
-        dst[chunks] = (chunks * chunkSize)..span.Length;
     }
 
     /// <inheritdoc cref="Partition{T}(System.ReadOnlySpan{T},int,System.Span{System.Range})"/>

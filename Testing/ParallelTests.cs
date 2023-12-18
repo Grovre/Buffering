@@ -1,4 +1,5 @@
-﻿using Buffering.Parallel;
+﻿using System.Runtime.InteropServices;
+using Buffering.Parallel;
 using NUnit.Framework;
 
 namespace Testing;
@@ -46,6 +47,61 @@ public class ParallelTests
         arr.Partition(4, ranges2);
         
         Assert.That(ranges.SequenceEqual(ranges2));
+        ranges2 = arr.Partition(4);
+        Assert.That(ranges.SequenceEqual(ranges2));
+    }
+
+    [Test]
+    public void IncrementingPartitioning()
+    {
+        // List to reuse memory
+        const int MaxLength = 10_000;
+        var list = new List<int>(MaxLength);
+        var chunks = new Range[12];
+        for (var i = 1; i <= MaxLength; i++)
+        {
+            Array.Fill(chunks, new Range(99999, 99999 + 1)); // Should become valid or 0
+            list.Clear();
+            list.AddRange(Enumerable.Repeat(-1, i));
+
+            var listSpan = CollectionsMarshal.AsSpan(list);
+            if (listSpan.Length < chunks.Length)
+            {
+                Assert.Throws<ArgumentOutOfRangeException>(() =>
+                {
+                    var span = CollectionsMarshal.AsSpan(list);
+                    span.Partition(chunks.Length, chunks);
+                });
+
+                continue;
+            }
+            
+            listSpan.Partition(chunks.Length, chunks);
+            Assert.That(chunks.All(c1 => chunks.All(c2 =>
+            {
+                if (c1.Equals(c2))
+                    return true;
+                
+                var a = c1.Start.Value;
+                var b = c1.End.Value;
+                var x = c2.Start.Value;
+                var y = c2.End.Value;
+
+                return (a < x && b <= x) ||
+                       (x < a && y <= a);
+            })));
+
+            Parallel.ForEach(chunks, r =>
+            {
+                var span = CollectionsMarshal.AsSpan(list); // Can't capture ref structs
+                Assert.That(0 <= r.Start.Value && r.Start.Value < span.Length);
+                Assert.That(0 < r.End.Value && r.End.Value <= span.Length);
+                Assert.That(r.Start.Value < r.End.Value);
+                span[r].Fill(1);
+            });
+            
+            Assert.That(list.TrueForAll(v => v == 1));
+        }
     }
 
     [Test]
