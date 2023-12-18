@@ -8,7 +8,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>0.3.0</Version>
+        <Version>0.3.1</Version>
         <Title>Buffering</Title>
         <Description>Efficiently streamlined buffering functionality for any system</Description>
         <Copyright>MIT</Copyright>
@@ -17,7 +17,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Authors>Grovre</Authors>
         
-        <PackageReleaseNotes>Added data partitioning and a very easy method of parallelizing an array of data</PackageReleaseNotes>
+        <PackageReleaseNotes>Reworked partitioning logic</PackageReleaseNotes>
     </PropertyGroup>
     
     <ItemGroup>

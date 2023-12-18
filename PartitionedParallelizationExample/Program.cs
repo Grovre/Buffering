@@ -7,8 +7,8 @@ var data = new IntData[100_000_000];
 
 Console.WriteLine("Parallelization");
 var pp = new PartitionParallelizer<IntData>(
-    chunks: 8,
-    threadCount: 8,
+    chunks: 10,
+    threadCount: 10,
     data,
     (ref IntData d) => d.N = 69);
 
