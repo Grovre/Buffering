@@ -11,11 +11,11 @@ var db = new DoubleBuffer<Vector3, Vector3>(
         configuration: new BufferResourceConfiguration<Vector3, Vector3>(
             init: (out Vector3 v3) => v3 = default,
             updater: (ref Vector3 rsc, bool _, Vector3 state) => rsc += state,
-            new MonitorLock())),
+            resourceLock: new MonitorLock())),
     configuration: new DoubleBufferConfiguration(
         swapEffect: DoubleBufferSwapEffect.Flip));
 
-var cts = new CancellationTokenSource(10_000);
+using var cts = new CancellationTokenSource(10_000);
 
 var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).StartNew(() =>
 {

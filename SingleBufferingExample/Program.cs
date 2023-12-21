@@ -17,7 +17,7 @@ var buffer = new SingleBuffer<BufferValues, object?>(
             },
             new MonitorLock())));
 
-var cts = new CancellationTokenSource(10_000);
+using var cts = new CancellationTokenSource(10_000);
 
 var bufferUpdaterTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).StartNew(() =>
 {
