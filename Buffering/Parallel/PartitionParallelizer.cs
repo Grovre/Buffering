@@ -68,6 +68,21 @@ public sealed class PartitionParallelizer<T>
     private void InitThreads()
     {
         Debug.Assert(_index == -1 && !_threadsInitialized);
+
+        void ChunkWork(int chunkIndex)
+        {
+            var range = _chunkRanges[chunkIndex];
+            var chunk = _data.AsSpan(range);
+            if (DatumHandler != null)
+            {
+                foreach (ref var o in chunk)
+                {
+                    DatumHandler.Invoke(ref o);
+                }
+            }
+
+            DataHandler?.Invoke(chunk);
+        }
         
         if (ThreadCount == Chunks)
         {
@@ -76,17 +91,7 @@ public sealed class PartitionParallelizer<T>
                 var j = i;
                 _threads[j] = new Thread(() =>
                 {
-                    var range = _chunkRanges[j];
-                    var chunk = _data.AsSpan(range);
-                    if (DatumHandler != null)
-                    {
-                        foreach (ref var o in chunk)
-                        {
-                            DatumHandler.Invoke(ref o);
-                        }
-                    }
-                    
-                    DataHandler?.Invoke(chunk);
+                    ChunkWork(j);
                 });
             }
         }
@@ -99,18 +104,7 @@ public sealed class PartitionParallelizer<T>
                     var i = Interlocked.Increment(ref _index);
                     while (i < _chunkRanges.Length)
                     {
-                        var range = _chunkRanges[i];
-                        var chunk = _data.AsSpan(range);
-                        if (DatumHandler != null)
-                        {
-                            foreach (ref var o in chunk)
-                            {
-                                DatumHandler.Invoke(ref o);
-                            }
-                        }
-
-                        DataHandler?.Invoke(chunk);
-
+                        ChunkWork(i);
                         i = Interlocked.Increment(ref _index);
                     }
                 });
