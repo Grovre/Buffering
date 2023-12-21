@@ -114,8 +114,8 @@ public class ParallelTests
         var pp = new PartitionParallelizer<IntData>(
             10, 
             5,
-            data, 
-            (ref IntData d) => d.N = 100);
+            data);
+        pp.DatumHandler += (ref IntData d) => d.N = 100;
         pp.Start();
         
         pp.Join();
@@ -132,8 +132,8 @@ public class ParallelTests
         var pp = new PartitionParallelizer<IntData>(
             5, 
             10,
-            data, 
-            (ref IntData d) => d.N = 100);
+            data);
+        pp.DatumHandler += (ref IntData d) => d.N = 100;
         pp.Start();
         
         pp.Join();
@@ -150,8 +150,8 @@ public class ParallelTests
         var pp = new PartitionParallelizer<IntData>(
             8, 
             8,
-            data, 
-            (ref IntData d) => d.N = 100);
+            data);
+        pp.DatumHandler += (ref IntData d) => d.N = 100;
         pp.Start();
         
         pp.Join();

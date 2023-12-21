@@ -9,8 +9,9 @@ Console.WriteLine("Parallelization");
 var pp = new PartitionParallelizer<IntData>(
     chunks: 10,
     threadCount: 10,
-    data,
-    (ref IntData d) => d.N = 69);
+    data);
+
+pp.DatumHandler += (ref IntData n) => n.N = 69;
 
 Console.WriteLine("Working");
 pp.Start();

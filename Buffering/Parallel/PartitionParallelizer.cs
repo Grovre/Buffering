@@ -14,9 +14,13 @@ namespace Buffering.Parallel;
 public sealed class PartitionParallelizer<T>
 {
     /// <summary>
-    /// Used to process some data on a thread
+    /// Used to process data individually on a thread
     /// </summary>
-    public delegate void ParallelRefDataHandler(ref T o);
+    public delegate void RefDatumHandler(ref T o);
+    /// <summary>
+    /// Used to process chunk data on a thread
+    /// </summary>
+    public delegate void DataSpanHandler(Span<T> chunk);
     
     /// <summary>
     /// Amount of chunks for threads to work on.
@@ -29,9 +33,14 @@ public sealed class PartitionParallelizer<T>
     /// </summary>
     public int ThreadCount { get; }
     /// <summary>
-    /// Delegate to process the data on any thread.
+    /// Delegate to process individual data on any thread.
     /// </summary>
-    public ParallelRefDataHandler DataHandler;
+    public RefDatumHandler? DatumHandler;
+    /// <summary>
+    /// Delegate to process an entire chunk of data on any thread.
+    /// Comes after the DatumHandler
+    /// </summary>
+    public DataSpanHandler? DataHandler;
     private readonly Thread[] _threads;
     private readonly T[] _data;
     private readonly Range[] _chunkRanges;
@@ -42,12 +51,11 @@ public sealed class PartitionParallelizer<T>
     /// <param name="chunks">Amount of chunks</param>
     /// <param name="threadCount">Amount of threads</param>
     /// <param name="data">Data to partition/split into chunks</param>
-    /// <param name="dataHandler">Action to handle one datum by reference.</param>
-    public PartitionParallelizer(int chunks, int threadCount, T[] data, ParallelRefDataHandler dataHandler)
+    /// <param name="datumHandler">Action to handle one datum by reference.</param>
+    public PartitionParallelizer(int chunks, int threadCount, T[] data)
     {
         Chunks = chunks;
         ThreadCount = threadCount;
-        DataHandler = dataHandler;
         _data = data;
         _threads = new Thread[threadCount];
         _chunkRanges = _data.Partition(chunks);
@@ -69,10 +77,16 @@ public sealed class PartitionParallelizer<T>
                 _threads[j] = new Thread(() =>
                 {
                     var range = _chunkRanges[j];
-                    foreach (ref var o in _data.AsSpan(range))
+                    var chunk = _data.AsSpan(range);
+                    if (DatumHandler != null)
                     {
-                        DataHandler.Invoke(ref o);
+                        foreach (ref var o in chunk)
+                        {
+                            DatumHandler.Invoke(ref o);
+                        }
                     }
+                    
+                    DataHandler?.Invoke(chunk);
                 });
             }
         }
@@ -86,10 +100,16 @@ public sealed class PartitionParallelizer<T>
                     while (i < _chunkRanges.Length)
                     {
                         var range = _chunkRanges[i];
-                        foreach (ref var o in _data.AsSpan(range))
+                        var chunk = _data.AsSpan(range);
+                        if (DatumHandler != null)
                         {
-                            DataHandler.Invoke(ref o);
+                            foreach (ref var o in chunk)
+                            {
+                                DatumHandler.Invoke(ref o);
+                            }
                         }
+
+                        DataHandler?.Invoke(chunk);
 
                         i = Interlocked.Increment(ref _index);
                     }
