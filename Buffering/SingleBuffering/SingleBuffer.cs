@@ -25,11 +25,10 @@ public class SingleBuffer<T, TUpdaterState>
     /// </summary>
     /// <param name="rsc">Resource to use as a buffer</param>
     /// <param name="config">How the single buffer should be configured for use</param>
-    public SingleBuffer(BufferResource<T, TUpdaterState> rsc, SingleBufferConfiguration? config = null)
+    public SingleBuffer(BufferResourceConfiguration<T, TUpdaterState> rscConfiguration, SingleBufferConfiguration? config = null)
     {
-        config ??= new SingleBufferConfiguration();
-        _rsc = rsc;
-        _config = config;
+        _config = config ?? new SingleBufferConfiguration();
+        _rsc = new BufferResource<T, TUpdaterState>(rscConfiguration);
         _info = default;
     }
 
