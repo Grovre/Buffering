@@ -33,13 +33,13 @@ public class DoubleBuffer<T, TUpdaterState>
     /// <summary>
     /// Constructs the double buffer accordingly.
     /// </summary>
-    /// <param name="rsc">Copied to the two buffers to avoid issues with resource objects referencing the same existing object</param>
+    /// <param name="rscConfiguration">Copied and used by the front and back buffer</param>
     /// <param name="configuration">Sets up how the double buffer will run. If null, uses default configuration</param>
-    public DoubleBuffer(in BufferResource<T, TUpdaterState> rsc, DoubleBufferConfiguration? configuration = null)
+    public DoubleBuffer(BufferResourceConfiguration<T, TUpdaterState> rscConfiguration, DoubleBufferConfiguration? configuration = null)
     {
         _config = configuration ?? new DoubleBufferConfiguration(DoubleBufferSwapEffect.Flip);
-        _rsc0 = new BufferResource<T, TUpdaterState>(rsc);
-        _rsc1 = new BufferResource<T, TUpdaterState>(rsc);
+        _rsc0 = new BufferResource<T, TUpdaterState>(rscConfiguration);
+        _rsc1 = new BufferResource<T, TUpdaterState>(rscConfiguration);
         _frontInfo = default;
     }
     

@@ -33,10 +33,15 @@ public class BufferResource<T, TUpdaterState>
     /// Whether or not the resource object has been through the updater
     /// </summary>
     public bool IsResourceFromUpdater { get; private set; }
+
     /// <summary>
     /// The object represented by this resource
     /// </summary>
-    public T Resource => _resource;
+    public T Resource
+    {
+        get => _resource;
+        set => _resource = value;
+    }
 
     /// <summary>
     /// State passed into the updater to avoid capturing
