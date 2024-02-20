@@ -59,6 +59,8 @@ public class BufferResource<T, TUpdaterState>
             configuration.Init,
             configuration.Updater,
             configuration.ResourceLock.Copy());
+        
+        Config.Init(out _resource);
     }
 
     /// <summary>
