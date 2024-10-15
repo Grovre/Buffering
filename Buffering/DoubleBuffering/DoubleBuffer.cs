@@ -92,13 +92,6 @@ public class DoubleBuffer<T, TUpdaterState>
                 _rsc1 = t;
                 break;
             
-            case DoubleBufferSwapEffect.Copy:
-                var hlock2 = _rsc0.Lock(ResourceAccessFlags.Write);
-                _rsc0.CopyFromResource(_rsc1);
-                _frontInfo = nextInfo;
-                hlock2.Dispose();
-                break;
-            
             default:
                 throw new NotSupportedException(
                     "Unsupported swap effect");
