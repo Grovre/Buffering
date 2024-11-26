@@ -16,8 +16,8 @@ public class DoubleBuffer<T>
     private StrongBox<T> _rsc0; // front
     private StrongBox<T> _rsc1; // back
     private BufferedResourceInfo _frontInfo;
-    private readonly DoubleBufferConfiguration _config;
     private readonly IResourceLock _lock;
+    private readonly DoubleBufferSwapEffect _swapEffect;
 
     /// <summary>
     /// Used to create a local value to read the front buffer from.
@@ -33,14 +33,15 @@ public class DoubleBuffer<T>
     /// <summary>
     /// Constructs the double buffer accordingly.
     /// </summary>
-    /// <param name="configuration">Sets up how the double buffer will run. If null, uses default configuration</param>
-    public DoubleBuffer(DoubleBufferConfiguration? configuration = null)
+    /// <param name="lockImpl">Lock implementation to use</param>
+    /// <param name="swapEffect">Swap effect to use</param>
+    public DoubleBuffer(IResourceLock lockImpl, DoubleBufferSwapEffect swapEffect)
     {
-        _config = configuration ?? new DoubleBufferConfiguration(DoubleBufferSwapEffect.Flip, new NoLock());
         _rsc0 = new();
         _rsc1 = new();
         _frontInfo = default;
-        _lock = _config.ResourceLock;
+        _lock = lockImpl;
+        _swapEffect = swapEffect;
     }
     
     /// <summary>
@@ -73,15 +74,15 @@ public class DoubleBuffer<T>
     /// Swaps the buffers with functionality according to the configured swap effect (default is flip).
     /// Should be called after updating the back buffer.
     /// All reads immediately after every swap are on the correct resource in the front buffer.
-    /// The back buffer IS NOT THREAD SAFE. No locking or synchronization is done. Must be called on a dedicated back buffer update thread.
-    /// This maximizes throughput anyways.
+    /// The back buffer IS NOT THREAD SAFE. No locking or synchronization is done.
+    /// This maximizes throughput out of the box.
     /// </summary>
-    /// <exception cref="Exception">Unknown/unsupported swap effect</exception>
+    /// <exception cref="NotSupportedException">Unknown/unsupported swap effect</exception>
     internal void SwapBuffers()
     {
         var nextInfo = BufferedResourceInfo.PrepareNextInfo(_frontInfo, true);
         
-        switch (_config.SwapEffect)
+        switch (_swapEffect)
         {
             case DoubleBufferSwapEffect.Flip:
                 var hlock1 = _lock.Lock(ResourceAccessFlags.Write);

@@ -8,8 +8,8 @@ using Buffering.DoubleBuffering;
 using Buffering.Locking.Locks;
 
 var db = new DoubleBuffer<Vector3>(
-    new DoubleBufferConfiguration(DoubleBufferSwapEffect.Flip,
-    new MonitorLock()));
+    new MonitorLock(),
+    DoubleBufferSwapEffect.Flip);
 
 using var cts = new CancellationTokenSource(10_000);
 

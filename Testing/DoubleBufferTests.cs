@@ -16,7 +16,7 @@ public class DoubleBufferTests
     [SetUp]
     public void SetUp()
     {
-        _doubleBuffer = new DoubleBuffer<int>(new DoubleBufferConfiguration(DoubleBufferSwapEffect.Flip, new NoLock()));
+        _doubleBuffer = new DoubleBuffer<int>(new NoLock(), DoubleBufferSwapEffect.Flip);
         _backController = _doubleBuffer.BackController;
         _frontReader = _doubleBuffer.FrontReader;
     }
