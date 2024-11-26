@@ -105,13 +105,13 @@ public class DoubleBuffer<T>
                 _frontInfo = nextInfo;
                 hlock1.Dispose(); // Quick release
                 _rsc1 = t;
+
+                (_backUpdated, _frontUpdated) = (_frontUpdated, _backUpdated);
                 break;
             
             default:
                 throw new NotSupportedException(
                     "Unsupported swap effect");
         }
-
-        (_backUpdated, _frontUpdated) = (_frontUpdated, _backUpdated);
     }
 }
