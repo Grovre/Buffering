@@ -6,7 +6,7 @@ using Buffering.DoubleBuffering;
 using Buffering.Locking.Locks;
 
 var db = new DoubleBuffer<Vector3>(
-    new MonitorLock(),
+    new SystemThreadingLock(),
     DoubleBufferSwapEffect.Flip);
 
 using var cts = new CancellationTokenSource(10_000);

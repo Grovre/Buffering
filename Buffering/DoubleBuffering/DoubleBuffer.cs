@@ -38,7 +38,7 @@ public class DoubleBuffer<T>
         _rsc0 = new();
         _rsc1 = new();
         _frontInfo = default;
-        _lock = lockImpl;
+        _lock = lockImpl.Copy();
         _swapEffect = swapEffect;
     }
     
