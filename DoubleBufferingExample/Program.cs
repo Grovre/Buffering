@@ -2,8 +2,6 @@
 
 using System.Diagnostics;
 using System.Numerics;
-using Buffering;
-using Buffering.BufferResources;
 using Buffering.DoubleBuffering;
 using Buffering.Locking.Locks;
 
@@ -16,7 +14,7 @@ using var cts = new CancellationTokenSource(10_000);
 var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).StartNew(() =>
 {
     var token = cts.Token;
-    var controller = db.BackController;
+    var controller = db.BackWriter;
     var start = Stopwatch.GetTimestamp();
     while (!token.IsCancellationRequested)
     {

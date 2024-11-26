@@ -1,7 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Buffering.BufferResources;
 using Buffering.Locking;
-using Buffering.Locking.Locks;
 
 namespace Buffering.DoubleBuffering;
 
@@ -12,7 +11,6 @@ namespace Buffering.DoubleBuffering;
 /// <typeparam name="T">Value type in the buffer</typeparam>
 public class DoubleBuffer<T>
 {
-    // originally from array but remove extra pointer deref
     private StrongBox<T> _rsc0; // front
     private StrongBox<T> _rsc1; // back
     private BufferedResourceInfo _frontInfo;
@@ -28,7 +26,7 @@ public class DoubleBuffer<T>
     /// Used to create a local value to update and swap the back buffer.
     /// Using this locally can provide great performance benefits.
     /// </summary>
-    public DoubleBufferBackController<T> BackController => new(this);
+    public DoubleBufferBackWriter<T> BackWriter => new(this);
 
     /// <summary>
     /// Constructs the double buffer accordingly.
@@ -67,9 +65,25 @@ public class DoubleBuffer<T>
     /// </summary>
     internal void UpdateBackBuffer(in T value)
     {
+        _updatedOnce = true;
         _rsc1.Value = value;
     }
-    
+
+    private bool _updatedOnce = false;
+    /// <summary>
+    /// Reads the back buffer and returns a reference to it.
+    /// </summary>
+    /// <returns>A reference to the back buffer</returns>
+    /// <exception cref="NotSupportedException">When the front buffer has not ben initially set for a reference return</exception>
+    internal ref T ReadBackBuffer()
+    {
+        if (!_updatedOnce)
+            throw new NotSupportedException(
+                "The back buffer has not been updated yet");
+
+        return ref _rsc1.Value!;
+    }
+
     /// <summary>
     /// Swaps the buffers with functionality according to the configured swap effect (default is flip).
     /// Should be called after updating the back buffer.
