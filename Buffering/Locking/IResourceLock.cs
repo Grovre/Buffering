@@ -9,25 +9,6 @@ namespace Buffering.Locking
     /// </summary>
     public interface IResourceLock
     {
-        /// <summary>
-        /// Called immediately before locking.
-        /// Called even if an attempt in a Try failed.
-        /// </summary>
-        internal event EventHandler? Locking;
-        /// <summary>
-        /// Called immediately after locking.
-        /// Not called if a Try attempt fails.
-        /// </summary>
-        internal event EventHandler? AfterLocked;
-        /// <summary>
-        /// Called immediately before unlocking.
-        /// </summary>
-        internal event EventHandler? Unlocking;
-        /// <summary>
-        /// Called immediately after unlocking.
-        /// </summary>
-        internal event EventHandler? AfterUnlocked;
-        
         internal const string BadOwnerExceptionMessage = "Lock handle not owned by lock queried for unlocking";
         
         /// <summary>

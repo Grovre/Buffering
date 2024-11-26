@@ -9,15 +9,6 @@ namespace Buffering.Locking.Locks;
 /// </summary>
 public class MultipleReaderLock : IResourceLock
 {
-    /// <inheritdoc />
-    public event EventHandler? Locking;
-    /// <inheritdoc />
-    public event EventHandler? AfterLocked;
-    /// <inheritdoc />
-    public event EventHandler? Unlocking;
-    /// <inheritdoc />
-    public event EventHandler? AfterUnlocked;
-    
     private readonly ReaderWriterLockSlim _lock = new();
 
     /// <inheritdoc />
@@ -46,17 +37,13 @@ public class MultipleReaderLock : IResourceLock
 
     internal ResourceLockHandle ReadLock()
     {
-        Locking?.Invoke(this, EventArgs.Empty);
         _lock.EnterReadLock();
-        AfterLocked?.Invoke(this, EventArgs.Empty);
         return new ResourceLockHandle(this, ResourceAccessFlags.Read);
     }
 
     internal ResourceLockHandle WriteLock()
     {
-        Locking?.Invoke(this, EventArgs.Empty);
         _lock.EnterWriteLock();
-        AfterLocked?.Invoke(this, EventArgs.Empty);
         return new ResourceLockHandle(this, ResourceAccessFlags.Write);
     }
 
@@ -66,14 +53,12 @@ public class MultipleReaderLock : IResourceLock
         if (hlock.Owner != this)
             throw new AuthenticationException(IResourceLock.BadOwnerExceptionMessage);
         
-        Unlocking?.Invoke(this, EventArgs.Empty);
         if ((hlock.AccessFlags & ResourceAccessFlags.Write) != 0)
             _lock.ExitWriteLock();
         else if ((hlock.AccessFlags & ResourceAccessFlags.Read) != 0)
             _lock.ExitReadLock();
         else
             throw new NotSupportedException("Lock must be a write or read lock");
-        AfterUnlocked?.Invoke(this, EventArgs.Empty);
     }
 
     /// <inheritdoc />

@@ -12,7 +12,9 @@ namespace Buffering.DoubleBuffering;
 public class DoubleBuffer<T>
 {
     private StrongBox<T> _rsc0; // front
+    private bool _frontUpdated = false;
     private StrongBox<T> _rsc1; // back
+    private bool _backUpdated = false;
     private BufferedResourceInfo _frontInfo;
     private readonly IResourceLock _lock;
     private readonly DoubleBufferSwapEffect _swapEffect;
@@ -65,11 +67,9 @@ public class DoubleBuffer<T>
     /// </summary>
     internal void UpdateBackBuffer(in T value)
     {
-        _updatedOnce = true;
         _rsc1.Value = value;
+        _backUpdated = true;
     }
-
-    private bool _updatedOnce = false;
     /// <summary>
     /// Reads the back buffer and returns a reference to it.
     /// </summary>
@@ -77,9 +77,9 @@ public class DoubleBuffer<T>
     /// <exception cref="NotSupportedException">When the front buffer has not ben initially set for a reference return</exception>
     internal ref T ReadBackBuffer()
     {
-        if (!_updatedOnce)
+        if (!_frontUpdated || !_backUpdated)
             throw new NotSupportedException(
-                "The back buffer has not been updated yet");
+                "A buffer has not been initialized for a reference return");
 
         return ref _rsc1.Value!;
     }
@@ -99,8 +99,8 @@ public class DoubleBuffer<T>
         switch (_swapEffect)
         {
             case DoubleBufferSwapEffect.Flip:
-                var hlock1 = _lock.Lock(ResourceAccessFlags.Write);
                 var t = _rsc0;
+                var hlock1 = _lock.Lock(ResourceAccessFlags.Write);
                 _rsc0 = _rsc1;
                 _frontInfo = nextInfo;
                 hlock1.Dispose(); // Quick release
@@ -111,5 +111,7 @@ public class DoubleBuffer<T>
                 throw new NotSupportedException(
                     "Unsupported swap effect");
         }
+
+        (_backUpdated, _frontUpdated) = (_frontUpdated, _backUpdated);
     }
 }

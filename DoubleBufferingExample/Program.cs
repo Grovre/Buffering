@@ -5,7 +5,7 @@ using System.Numerics;
 using Buffering.DoubleBuffering;
 using Buffering.Locking.Locks;
 
-var db = new DoubleBuffer<Vector3>(
+var db = new DoubleBuffer<object>(
     new SystemThreadingLock(),
     DoubleBufferSwapEffect.Flip);
 
@@ -14,15 +14,14 @@ using var cts = new CancellationTokenSource(10_000);
 var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).StartNew(() =>
 {
     var token = cts.Token;
-    var controller = db.BackWriter;
+    var writer = db.BackWriter;
     var start = Stopwatch.GetTimestamp();
     while (!token.IsCancellationRequested)
     {
-        var elapsed = Stopwatch.GetElapsedTime(start);
-        var scaledUp = (int)(Math.Cos(elapsed.Seconds / (Math.PI * 2)) * 100);
-        var v3 = new Vector3(scaledUp);
-        controller.UpdateBackBuffer(v3);
-        controller.SwapBuffers();
+        //var elapsed = Stopwatch.GetElapsedTime(start);
+        Thread.Sleep(17);
+        writer.UpdateBackBuffer(null);
+        writer.SwapBuffers();
     }
 });
 

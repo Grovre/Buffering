@@ -73,6 +73,15 @@ public class DoubleBufferTests
     [Test]
     public void TestReadBackBuffer()
     {
+        // Ref access test before initializing both buffers
+        Assert.Throws<NotSupportedException>(() => _backController.ReadBackBuffer());
+        _backController.UpdateBackBuffer(0);
+        Assert.Throws<NotSupportedException>(() => _backController.ReadBackBuffer());
+        _backController.SwapBuffers();
+        Assert.Throws<NotSupportedException>(() => _backController.ReadBackBuffer());
+        _backController.UpdateBackBuffer(0);
+        Assert.DoesNotThrow(() => _backController.ReadBackBuffer());
+
         // Update back buffer and read it
         _backController.UpdateBackBuffer(42);
         ref var backBuffer = ref _backController.ReadBackBuffer();

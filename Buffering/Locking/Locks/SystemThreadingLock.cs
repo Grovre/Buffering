@@ -6,7 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 
+#pragma warning disable S3261 // Namespaces should not be empty
 namespace Buffering.Locking.Locks;
+#pragma warning restore S3261 // Namespaces should not be empty
 
 #if NET9_0_OR_GREATER
 
@@ -20,20 +22,9 @@ public class SystemThreadingLock : IResourceLock
     private readonly Lock _lock = new();
 
     /// <inheritdoc />
-    public event EventHandler? Locking;
-    /// <inheritdoc />
-    public event EventHandler? AfterLocked;
-    /// <inheritdoc />
-    public event EventHandler? Unlocking;
-    /// <inheritdoc />
-    public event EventHandler? AfterUnlocked;
-
-    /// <inheritdoc />
     public ResourceLockHandle Lock(ResourceAccessFlags flags)
     {
-        Locking?.Invoke(this, EventArgs.Empty);
         _lock.Enter();
-        AfterLocked?.Invoke(this, EventArgs.Empty);
         return new ResourceLockHandle(this, ResourceAccessFlags.Generic);
     }
 
@@ -41,10 +32,7 @@ public class SystemThreadingLock : IResourceLock
     public bool TryLock(ResourceAccessFlags flags, out ResourceLockHandle hlock)
     {
         hlock = new ResourceLockHandle(this, flags);
-        Locking?.Invoke(this, EventArgs.Empty);
         var attempt = _lock.TryEnter();
-        if (attempt)
-            AfterLocked?.Invoke(this, EventArgs.Empty);
         return attempt;
     }
 
@@ -54,9 +42,7 @@ public class SystemThreadingLock : IResourceLock
         if (hlock.Owner != this)
             throw new AuthenticationException(IResourceLock.BadOwnerExceptionMessage);
 
-        Unlocking?.Invoke(this, EventArgs.Empty);
         _lock.Exit();
-        AfterUnlocked?.Invoke(this, EventArgs.Empty);
     }
 
     /// <inheritdoc />

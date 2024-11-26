@@ -7,36 +7,22 @@ namespace Buffering.Locking.Locks;
 /// </summary>
 public class SpinnerLock : IResourceLock
 {
-    /// <inheritdoc />
-    public event EventHandler? Locking;
-    /// <inheritdoc />
-    public event EventHandler? AfterLocked;
-    /// <inheritdoc />
-    public event EventHandler? Unlocking;
-    /// <inheritdoc />
-    public event EventHandler? AfterUnlocked;
-
     private SpinLock _lock = new(false);
     
     /// <inheritdoc />
     public ResourceLockHandle Lock(ResourceAccessFlags flags)
     {
-        Locking?.Invoke(this, EventArgs.Empty);
         var lockTaken = false;
         _lock.TryEnter(10_000, ref lockTaken);
-        AfterLocked?.Invoke(this, EventArgs.Empty);
         return new ResourceLockHandle(this, ResourceAccessFlags.Generic);
     }
 
     /// <inheritdoc />
     public bool TryLock(ResourceAccessFlags flags, out ResourceLockHandle hlock)
     {
-        Locking?.Invoke(this, EventArgs.Empty);
         var lockTaken = false;
         hlock = new(this, flags);
         _lock.TryEnter(TimeSpan.Zero, ref lockTaken);
-        if (lockTaken)
-            AfterLocked?.Invoke(this, EventArgs.Empty);
         return lockTaken;
     }
 
@@ -46,9 +32,7 @@ public class SpinnerLock : IResourceLock
         if (hlock.Owner != this)
             throw new AuthenticationException(IResourceLock.BadOwnerExceptionMessage);
 
-        Unlocking?.Invoke(this, EventArgs.Empty);
         _lock.Exit();
-        AfterUnlocked?.Invoke(this, EventArgs.Empty);
     }
 
     /// <inheritdoc />

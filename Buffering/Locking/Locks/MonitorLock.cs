@@ -12,20 +12,9 @@ public class MonitorLock : IResourceLock
     private readonly object _lock = new();
 
     /// <inheritdoc />
-    public event EventHandler? Locking;
-    /// <inheritdoc />
-    public event EventHandler? AfterLocked;
-    /// <inheritdoc />
-    public event EventHandler? Unlocking;
-    /// <inheritdoc />
-    public event EventHandler? AfterUnlocked;
-
-    /// <inheritdoc />
     public ResourceLockHandle Lock(ResourceAccessFlags flags)
     {
-        Locking?.Invoke(this, EventArgs.Empty);
         Monitor.Enter(_lock);
-        AfterLocked?.Invoke(this, EventArgs.Empty);
         return new ResourceLockHandle(this, ResourceAccessFlags.Generic);
     }
 
@@ -33,10 +22,7 @@ public class MonitorLock : IResourceLock
     public bool TryLock(ResourceAccessFlags flags, out ResourceLockHandle hlock)
     {
         hlock = new ResourceLockHandle(this, flags);
-        Locking?.Invoke(this, EventArgs.Empty);
         var attempt = Monitor.TryEnter(_lock);
-        if (attempt)
-            AfterLocked?.Invoke(this, EventArgs.Empty);
         return attempt;
     }
 
@@ -46,9 +32,7 @@ public class MonitorLock : IResourceLock
         if (hlock.Owner != this)
             throw new AuthenticationException(IResourceLock.BadOwnerExceptionMessage);
         
-        Unlocking?.Invoke(this, EventArgs.Empty);
         Monitor.Exit(_lock);
-        AfterUnlocked?.Invoke(this, EventArgs.Empty);
     }
 
     /// <inheritdoc />
