@@ -7,7 +7,7 @@
 public readonly record struct BufferedResourceInfo
 {
     /// <summary>
-    /// The 'u' in 'uint' stands for unique until overflow and Id rolls back to 0
+    /// General way to keep track of equality. Id is not completely unique, as it will wrap around back to 0.
     /// </summary>
     public uint Id { get; } = 0;
     /// <summary>

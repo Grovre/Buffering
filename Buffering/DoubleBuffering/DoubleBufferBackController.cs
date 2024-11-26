@@ -6,18 +6,16 @@ namespace Buffering.DoubleBuffering;
 /// Used to control the back buffer of a double buffer
 /// </summary>
 /// <typeparam name="T">The type in the double buffer</typeparam>
-/// <typeparam name="TUpdaterState">Type of object used for state in the updater delegate</typeparam>
-public readonly struct DoubleBufferBackController<T, TUpdaterState>
-    where T : struct
+public readonly struct DoubleBufferBackController<T>
 {
-    private readonly DoubleBuffer<T, TUpdaterState> _doubleBuffer;
+    private readonly DoubleBuffer<T> _doubleBuffer;
     
     /// <summary>
     /// Should be used to retrieve a double buffer,
     /// preferably through the double buffer itself
     /// </summary>
     /// <param name="doubleBuffer">DoubleBuffer to control</param>
-    public DoubleBufferBackController(DoubleBuffer<T, TUpdaterState> doubleBuffer)
+    public DoubleBufferBackController(DoubleBuffer<T> doubleBuffer)
     {
         _doubleBuffer = doubleBuffer;
     }
@@ -33,9 +31,9 @@ public readonly struct DoubleBufferBackController<T, TUpdaterState>
     }
 
     /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.UpdateBackBuffer"/>
-    public void UpdateBackBuffer(TUpdaterState state)
+    public void UpdateBackBuffer(in T value)
     {
-        _doubleBuffer.UpdateBackBuffer(state);
+        _doubleBuffer.UpdateBackBuffer(value);
     }
 
     /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.SwapBuffers"/>

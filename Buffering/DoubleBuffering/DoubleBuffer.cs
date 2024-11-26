@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.Runtime.CompilerServices;
 using Buffering.BufferResources;
 using Buffering.Locking;
+using Buffering.Locking.Locks;
 
 namespace Buffering.DoubleBuffering;
 
@@ -9,38 +10,37 @@ namespace Buffering.DoubleBuffering;
 /// The back buffer should be updated concurrently with a back buffer controller.
 /// </summary>
 /// <typeparam name="T">Value type in the buffer</typeparam>
-/// <typeparam name="TUpdaterState">Type of object used for state in the updater delegate</typeparam>
-public class DoubleBuffer<T, TUpdaterState>
-    where T : struct
+public class DoubleBuffer<T>
 {
     // originally from array but remove extra pointer deref
-    private BufferResource<T, TUpdaterState> _rsc0; // front
-    private BufferResource<T, TUpdaterState> _rsc1; // back
+    private StrongBox<T> _rsc0; // front
+    private StrongBox<T> _rsc1; // back
     private BufferedResourceInfo _frontInfo;
     private readonly DoubleBufferConfiguration _config;
+    private readonly IResourceLock _lock;
 
     /// <summary>
     /// Used to create a local value to read the front buffer from.
     /// Using this locally can provide great performance benefits.
     /// </summary>
-    public DoubleBufferFrontReader<T, TUpdaterState> FrontReader => new(this);
+    public DoubleBufferFrontReader<T> FrontReader => new(this);
     /// <summary>
     /// Used to create a local value to update and swap the back buffer.
     /// Using this locally can provide great performance benefits.
     /// </summary>
-    public DoubleBufferBackController<T, TUpdaterState> BackController => new(this);
+    public DoubleBufferBackController<T> BackController => new(this);
 
     /// <summary>
     /// Constructs the double buffer accordingly.
     /// </summary>
-    /// <param name="rscConfiguration">Copied and used by the front and back buffer</param>
     /// <param name="configuration">Sets up how the double buffer will run. If null, uses default configuration</param>
-    public DoubleBuffer(BufferResourceConfiguration<T, TUpdaterState> rscConfiguration, DoubleBufferConfiguration? configuration = null)
+    public DoubleBuffer(DoubleBufferConfiguration? configuration = null)
     {
-        _config = configuration ?? new DoubleBufferConfiguration(DoubleBufferSwapEffect.Flip);
-        _rsc0 = new BufferResource<T, TUpdaterState>(rscConfiguration);
-        _rsc1 = new BufferResource<T, TUpdaterState>(rscConfiguration);
+        _config = configuration ?? new DoubleBufferConfiguration(DoubleBufferSwapEffect.Flip, new NoLock());
+        _rsc0 = new();
+        _rsc1 = new();
         _frontInfo = default;
+        _lock = _config.ResourceLock;
     }
     
     /// <summary>
@@ -52,8 +52,8 @@ public class DoubleBuffer<T, TUpdaterState>
     /// <returns>ResourceLockHandle to be disposed of immediately after reading/writing the buffer. This should be done ASAP</returns>
     internal ResourceLockHandle ReadFrontBuffer(out T rsc, out BufferedResourceInfo info)
     {
-        var hlock = _rsc0.Lock(ResourceAccessFlags.Read);
-        rsc = _rsc0.Resource;
+        var hlock = _lock.Lock(ResourceAccessFlags.Read);
+        rsc = _rsc0.Value!;
         info = _frontInfo;
         return hlock;
     }
@@ -64,9 +64,9 @@ public class DoubleBuffer<T, TUpdaterState>
     /// to maximize throughput.
     /// The back buffer IS NOT THREAD SAFE. No locking or synchronization is done.
     /// </summary>
-    internal void UpdateBackBuffer(TUpdaterState state)
+    internal void UpdateBackBuffer(in T value)
     {
-        _rsc1.UpdateResource(state);
+        _rsc1.Value = value;
     }
     
     /// <summary>
@@ -84,7 +84,7 @@ public class DoubleBuffer<T, TUpdaterState>
         switch (_config.SwapEffect)
         {
             case DoubleBufferSwapEffect.Flip:
-                var hlock1 = _rsc0.Lock(ResourceAccessFlags.Write);
+                var hlock1 = _lock.Lock(ResourceAccessFlags.Write);
                 var t = _rsc0;
                 _rsc0 = _rsc1;
                 _frontInfo = nextInfo;
@@ -96,7 +96,5 @@ public class DoubleBuffer<T, TUpdaterState>
                 throw new NotSupportedException(
                     "Unsupported swap effect");
         }
-        
-        Debug.Assert(!ReferenceEquals(_rsc0, _rsc1));
     }
 }

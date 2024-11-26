@@ -1,17 +1,15 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System.Diagnostics;
 using System.Numerics;
 using Buffering;
 using Buffering.BufferResources;
 using Buffering.DoubleBuffering;
 using Buffering.Locking.Locks;
 
-var db = new DoubleBuffer<Vector3, Vector3>(
-    rscConfiguration: new BufferResourceConfiguration<Vector3, Vector3>(
-        init: (out Vector3 v3) => v3 = default,
-        updater: (ref Vector3 rsc, bool _, Vector3 state) => rsc += state,
-        resourceLock: new MonitorLock()),
-    configuration: new DoubleBufferConfiguration(DoubleBufferSwapEffect.Flip));
+var db = new DoubleBuffer<Vector3>(
+    new DoubleBufferConfiguration(DoubleBufferSwapEffect.Flip,
+    new MonitorLock()));
 
 using var cts = new CancellationTokenSource(10_000);
 
@@ -19,9 +17,13 @@ var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).Start
 {
     var token = cts.Token;
     var controller = db.BackController;
+    var start = Stopwatch.GetTimestamp();
     while (!token.IsCancellationRequested)
     {
-        controller.UpdateBackBuffer(state: Vector3.One);
+        var elapsed = Stopwatch.GetElapsedTime(start);
+        var scaledUp = (int)(Math.Cos(elapsed.Seconds / (Math.PI * 2)) * 100);
+        var v3 = new Vector3(scaledUp);
+        controller.UpdateBackBuffer(v3);
         controller.SwapBuffers();
     }
 });

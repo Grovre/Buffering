@@ -12,10 +12,15 @@ public class DoubleBufferConfiguration : BufferConfiguration
     /// <summary>
     /// Swap effect to be used with the double buffer
     /// </summary>
-    public DoubleBufferSwapEffect SwapEffect { get; }
+    public DoubleBufferSwapEffect SwapEffect { get; set; }
+    /// <summary>
+    /// Type of resource lock to be used with the double buffer
+    /// </summary>
+    public IResourceLock ResourceLock { get; set; }
     
-    public DoubleBufferConfiguration(DoubleBufferSwapEffect swapEffect)
+    public DoubleBufferConfiguration(DoubleBufferSwapEffect swapEffect, IResourceLock resourceLockType)
     {
         SwapEffect = swapEffect;
+        ResourceLock = resourceLockType;
     }
 }
