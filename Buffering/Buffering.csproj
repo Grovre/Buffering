@@ -19,6 +19,26 @@
         
         <PackageReleaseNotes>Heavily refactored the library to make usage as simple as possible and removed copy swap effect. Previously, a no-cost implementation allowed the double buffer to use all swap effects. However, flipping is much faster than copying, and copying isn't necessary as the user can track the variable the back buffer is pulling from. Removing copying also allowed serious simplification.</PackageReleaseNotes>
     </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0|AnyCPU'">
+      <IsAotCompatible>True</IsAotCompatible>
+      <IsTrimmable>True</IsTrimmable>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0|AnyCPU'">
+      <IsAotCompatible>True</IsAotCompatible>
+      <IsTrimmable>True</IsTrimmable>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0|AnyCPU'">
+      <IsAotCompatible>True</IsAotCompatible>
+      <IsTrimmable>True</IsTrimmable>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0|AnyCPU'">
+      <IsAotCompatible>True</IsAotCompatible>
+      <IsTrimmable>True</IsTrimmable>
+    </PropertyGroup>
     
     <ItemGroup>
         <None Include="$(SolutionDir)README.md" Pack="true" PackagePath="\" />
