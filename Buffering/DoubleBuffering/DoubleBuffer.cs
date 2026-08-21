@@ -10,9 +10,13 @@ namespace Buffering.DoubleBuffering;
 /// The type of data stored in the double buffer.
 /// <para>
 /// <b>Value Types (<see langword="struct"/>):</b> The buffer stores distinct copies of the struct value. Swapping moves or copies values directly without heap allocations.
+/// Note that for structs larger than the native pointer/register size (e.g. multi-word structs), reading concurrently with a swap may lead to torn reads unless externally synchronized.
 /// </para>
 /// <para>
 /// <b>Reference Types (<see langword="class"/>):</b> The buffer stores object references (pointers). Swapping swaps or copies reference pointers, enabling zero-allocation ping-pong recycling or reference sharing.
+/// <para>
+/// <b>Caution:</b> The double buffer synchronizes the pointer reference, not the internal fields of the object. Mutating an object instance while concurrent readers hold a reference to it will cause race conditions.
+/// </para>
 /// </para>
 /// </typeparam>
 /// <remarks>
@@ -42,14 +46,44 @@ namespace Buffering.DoubleBuffering;
 /// </list>
 /// </para>
 /// <para>
-/// <b>Decoupled Struct Handles:</b>
-/// Access to the double buffer is mediated by lightweight <see langword="readonly"/> <see langword="struct"/> handles:
+/// <b>Decoupled Handles:</b>
+/// Access to the double buffer is mediated by lightweight handles:
 /// <see cref="FrontReader"/> provides read-only access to the front buffer, while <see cref="BackWriter"/> provides update and swap capabilities for the back buffer.
-/// Caching these struct instances locally avoids property dispatch overhead in tight performance loops.
+/// Caching these instances locally avoids property dispatch overhead in tight performance loops.
 /// </para>
 /// <para>
 /// <b>Pending Update Tracking:</b>
 /// An internal flag tracks whether new data has been written to the back buffer. Calling <see cref="DoubleBufferBackWriter{T}.SwapBuffers"/> when no update has been staged since the last swap is a safe no-op that returns <see langword="false"/>, preventing active front buffer state from being unintentionally overwritten.
+/// </para>
+/// <para>
+/// <b>Potential Gotchas &amp; Best Practices:</b>
+/// <list type="bullet">
+///   <item>
+///     <description>
+///       <b>Mutating Shared Reference Types:</b> When <typeparamref name="T"/> is a mutable reference type, calling <see cref="DoubleBufferBackWriter{T}.ReadBackBuffer"/> and mutating fields in-place while reader threads still hold a reference from a previous <see cref="DoubleBufferFrontReader{T}.ReadFrontBuffer"/> call introduces concurrent data races. Ensure readers complete reading within their frame cycle, snapshot required fields, or use immutable data types.
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///       <b>Aliasing in <see cref="DoubleBufferSwapEffect.CopyRefOrValue"/>:</b> After a swap with copy semantics, both front and back slots point to the exact same object reference. Mutating the back buffer instance directly without assigning a new object will mutate the active front buffer without thread isolation.
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///       <b>In-Place Mutation &amp; Pending Update Flag:</b> When mutating an existing back buffer object in-place, you must still invoke <see cref="DoubleBufferBackWriter{T}.UpdateBackBuffer"/> to mark the buffer as pending an update; otherwise, <see cref="DoubleBufferBackWriter{T}.SwapBuffers"/> will treat the buffer as unchanged and perform a no-op.
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///       <b>Multi-Word Struct Tearing:</b> For value types that exceed the CPU's atomic write width (typically 64 bits), concurrent reads and swaps may result in torn reads if not externally synchronized or wrapped in a reference type.
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///       <b>Single-Writer Violation:</b> Invoking write or swap methods on <see cref="BackWriter"/> from multiple threads concurrently without external locks will corrupt internal state.
+///     </description>
+///   </item>
+/// </list>
 /// </para>
 /// </remarks>
 public class DoubleBuffer<T>
@@ -60,21 +94,30 @@ public class DoubleBuffer<T>
     private readonly DoubleBufferSwapEffect _swapEffect;
 
     /// <summary>
-    /// Provides access to the front buffer of a double buffering mechanism.
+    /// Gets a lightweight <see cref="DoubleBufferFrontReader{T}"/> handle for reading the front buffer.
     /// </summary>
+    /// <remarks>
+    /// Obtain this handle and cache it locally in consumer worker loops to eliminate property access overhead in high-frequency read scenarios.
+    /// </remarks>
     public DoubleBufferFrontReader<T> FrontReader => new(this);
 
     /// <summary>
-    /// Provides access to the back buffer of a double buffering mechanism.
+    /// Gets a lightweight <see cref="DoubleBufferBackWriter{T}"/> handle for updating, inspecting, and swapping the back buffer.
     /// </summary>
+    /// <remarks>
+    /// Obtain this handle and cache it locally in the producer worker loop to eliminate property access overhead in high-frequency write scenarios.
+    /// </remarks>
     public DoubleBufferBackWriter<T> BackWriter => new(this);
 
     /// <summary>
-    /// Represents a double-buffering mechanism, enabling seamless swapping
-    /// between front and back buffers to handle updates without blocking or
-    /// race conditions.
+    /// Initializes a new instance of the <see cref="DoubleBuffer{T}"/> class with specified initial buffer values and a swap effect.
     /// </summary>
-    /// <typeparam name="T">The type of the data stored within the buffers.</typeparam>
+    /// <param name="initialFrontValue">The initial value or object reference placed in the front buffer, immediately readable by consumers.</param>
+    /// <param name="initialBackValue">The initial value or object reference placed in the back buffer, available to the producer.</param>
+    /// <param name="swapEffect">The <see cref="DoubleBufferSwapEffect"/> that determines how front and back buffers transition during a swap.</param>
+    /// <remarks>
+    /// The buffer is initialized with its pending update flag set to <see langword="true"/>, permitting an immediate initial swap of the provided values before any call to <see cref="DoubleBufferBackWriter{T}.UpdateBackBuffer"/>.
+    /// </remarks>
     public DoubleBuffer(T initialFrontValue, T initialBackValue, DoubleBufferSwapEffect swapEffect)
     {
         _front = initialFrontValue;
@@ -121,7 +164,7 @@ public class DoubleBuffer<T>
     /// </summary>
     /// <returns>
     /// Returns <c>true</c> if a swap was performed, indicating that there was a
-    /// pending update to process. Returns <c>false</c> if no swap occurred. Any
+    /// pending update to the process. Returns <c>false</c> if no swap occurred. Any
     /// updates to the back buffer will flag a pending update.
     /// </returns>
     internal bool SwapBuffers()

@@ -6,17 +6,37 @@
 /// <typeparam name="T">The type of data stored in the double buffer.</typeparam>
 /// <remarks>
 /// <para>
-/// <see cref="DoubleBufferBackWriter{T}"/> is a lightweight <see langword="readonly"/> <see langword="struct"/> handle designed for the producer
+/// <see cref="DoubleBufferBackWriter{T}"/> is a lightweight handle designed for the producer
 /// thread in a single-writer multiple-reader (SWMR) concurrency model. It enables the writer to prepare and stage new data in the back buffer
 /// in complete isolation from concurrent readers accessing the front buffer.
 /// </para>
 /// <para>
 /// <b>Thread Safety:</b> This handle enforces single-writer semantics. Only one thread should invoke write operations (<see cref="UpdateBackBuffer"/>
-/// and <see cref="SwapBuffers"/>) at any given time.
+/// and <see cref="SwapBuffers"/>) at any given time. Concurrent calls from multiple threads will corrupt internal state.
 /// </para>
 /// <para>
 /// <b>Performance:</b> Obtain an instance via <see cref="DoubleBuffer{T}.BackWriter"/> and cache it locally (e.g., in a local variable or a worker loop field)
 /// to eliminate property invocation overhead in high-frequency update loops.
+/// </para>
+/// <para>
+/// <b>Potential Gotchas &amp; Best Practices:</b>
+/// <list type="bullet">
+///   <item>
+///     <description>
+///       <b>Mutating Recycled Reference Types:</b> When recycling objects via <see cref="ReadBackBuffer"/> under <see cref="DoubleBufferSwapEffect.FlipRefOrValue"/>, ensure reader threads have completed their read operations before mutating the object. If consumers hold the reference across swap intervals, in-place mutations will cause data races.
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///       <b>Staging In-Place Mutations:</b> When modifying an object retrieved from <see cref="ReadBackBuffer"/> in-place, you must call <see cref="UpdateBackBuffer"/> with that object to set the internal pending update flag. Failing to do so causes <see cref="SwapBuffers"/> to treat the update as absent and perform a no-op.
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///       <b>Aliasing under Copy Semantics:</b> Under <see cref="DoubleBufferSwapEffect.CopyRefOrValue"/>, both buffers point to the exact same object reference after a swap. Mutating the back buffer instance directly mutates the active front buffer without thread isolation.
+///     </description>
+///   </item>
+/// </list>
 /// </para>
 /// </remarks>
 public class DoubleBufferBackWriter<T>
@@ -24,7 +44,7 @@ public class DoubleBufferBackWriter<T>
     private readonly DoubleBuffer<T> _doubleBuffer;
     
     /// <summary>
-    /// Initializes a new instance of the <see cref="DoubleBufferBackWriter{T}"/> struct bound to the specified <see cref="DoubleBuffer{T}"/>.
+    /// Initializes a new instance of the <see cref="DoubleBufferBackWriter{T}"/> class bound to the specified <see cref="DoubleBuffer{T}"/>.
     /// </summary>
     /// <param name="doubleBuffer">The <see cref="DoubleBuffer{T}"/> instance to control.</param>
     public DoubleBufferBackWriter(DoubleBuffer<T> doubleBuffer)
@@ -61,6 +81,11 @@ public class DoubleBufferBackWriter<T>
     /// <para>
     /// When using <see cref="DoubleBufferSwapEffect.FlipRefOrValue"/>, after a swap this method returns the previous front buffer resource,
     /// enabling zero-allocation ping-pong recycling and in-place reuse of objects or memory buffers.
+    /// </para>
+    /// <para>
+    /// <b>Gotcha:</b> If modifying an object returned by this method in-place, you must still invoke <see cref="UpdateBackBuffer"/> to mark
+    /// the buffer as updated; otherwise <see cref="SwapBuffers"/> will treat the buffer as unchanged and perform a no-op.
+    /// Additionally, ensure reader threads are not concurrently accessing this instance before mutating its fields.
     /// </para>
     /// </remarks>
     public T ReadBackBuffer()
