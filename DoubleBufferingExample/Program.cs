@@ -5,7 +5,7 @@ using Buffering.DoubleBuffering;
 var db = new DoubleBuffer<Guid>(
     Guid.Empty,
     Guid.Empty,
-    DoubleBufferSwapEffect.Flip);
+    DoubleBufferSwapEffect.FlipRefOrValue);
 
 using var cts = new CancellationTokenSource(10_000);
 
