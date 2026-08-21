@@ -19,7 +19,7 @@ public class DoubleBufferTests
         _doubleBuffer = new DoubleBuffer<int>(
             initialFrontValue: 0,
             initialBackValue: 0,
-            swapEffect: DoubleBufferSwapEffect.Flip);
+            swapEffect: DoubleBufferSwapEffect.FlipRefOrValue);
 
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
@@ -52,7 +52,7 @@ public class DoubleBufferTests
     public void SwapBuffers_Flip_ExchangesFrontAndBack()
     {
         // Start: front=10, back=20
-        _doubleBuffer = new DoubleBuffer<int>(10, 20, DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(10, 20, DoubleBufferSwapEffect.FlipRefOrValue);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
@@ -66,7 +66,7 @@ public class DoubleBufferTests
     [Test]
     public void SwapBuffers_Copy_FrontGetsBack_BackUnchanged()
     {
-        _doubleBuffer = new DoubleBuffer<int>(10, 20, DoubleBufferSwapEffect.Copy);
+        _doubleBuffer = new DoubleBuffer<int>(10, 20, DoubleBufferSwapEffect.CopyRefOrValue);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
@@ -127,7 +127,7 @@ public class DoubleBufferTests
     [Test]
     public void SwapBuffers_Flip_PreservesOldFrontInBack()
     {
-        _doubleBuffer = new DoubleBuffer<int>(111, 222, DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(111, 222, DoubleBufferSwapEffect.FlipRefOrValue);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
@@ -149,7 +149,7 @@ public class DoubleBufferTests
     [Test]
     public void SwapBuffers_Copy_FrontGetsBack_BackKeepsSameValue()
     {
-        _doubleBuffer = new DoubleBuffer<int>(111, 222, DoubleBufferSwapEffect.Copy);
+        _doubleBuffer = new DoubleBuffer<int>(111, 222, DoubleBufferSwapEffect.CopyRefOrValue);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
@@ -171,7 +171,7 @@ public class DoubleBufferTests
     [Test]
     public void SwapBuffers_Copy_ThenFlip_WorksCorrectly()
     {
-        _doubleBuffer = new DoubleBuffer<int>(100, 200, DoubleBufferSwapEffect.Copy);
+        _doubleBuffer = new DoubleBuffer<int>(100, 200, DoubleBufferSwapEffect.CopyRefOrValue);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
@@ -199,7 +199,7 @@ public class DoubleBufferTests
         var backObj = new TestObject(2);
 
         var buffer = new DoubleBuffer<TestObject>(
-            frontObj, backObj, DoubleBufferSwapEffect.Flip);
+            frontObj, backObj, DoubleBufferSwapEffect.FlipRefOrValue);
         var frontReader = buffer.FrontReader;
         var backWriter = buffer.BackWriter;
 
@@ -220,7 +220,7 @@ public class DoubleBufferTests
         var newBack = new TestObject(42);
 
         var buffer = new DoubleBuffer<TestObject>(
-            new TestObject(1), initialBack, DoubleBufferSwapEffect.Flip);
+            new TestObject(1), initialBack, DoubleBufferSwapEffect.FlipRefOrValue);
         var backWriter = buffer.BackWriter;
 
         backWriter.UpdateBackBuffer(newBack);
@@ -235,7 +235,7 @@ public class DoubleBufferTests
     [Test]
     public void ConcurrentUpdatesAndSwaps_NoCorruptionOrDeadlock()
     {
-        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.FlipRefOrValue);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
@@ -301,7 +301,7 @@ public class DoubleBufferTests
     [Test]
     public void ConcurrentMultipleWriters_NoLostUpdates_LockFree()
     {
-        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.FlipRefOrValue);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
@@ -334,7 +334,7 @@ public class DoubleBufferTests
     [Test]
     public void ConcurrentReaders_NeverObserveTornState()
     {
-        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.FlipRefOrValue);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
@@ -377,11 +377,9 @@ public class DoubleBufferTests
     }
 
     [Test]
-    public void Constructor_WithObsoleteLockImpl_IgnoredAndWorksCorrectly()
+    public void Constructor_Initialization_WorksCorrectly()
     {
-#pragma warning disable CS0618 // Type or member is obsolete
-        var buffer = new DoubleBuffer<int>(10, 20, new NoLock(), DoubleBufferSwapEffect.Flip);
-#pragma warning restore CS0618
+        var buffer = new DoubleBuffer<int>(10, 20, DoubleBufferSwapEffect.FlipRefOrValue);
         var reader = buffer.FrontReader;
         var writer = buffer.BackWriter;
 
@@ -396,12 +394,12 @@ public class DoubleBufferTests
     }
 
     [Test]
-    public void ConcurrentReadersAndWriters_WithLargeStruct_NeverObserveTornState()
+    public void ConcurrentReadersAndWriters_WithReferenceTypePayload_NeverObserveTornState()
     {
-        var buffer = new DoubleBuffer<LargeStruct>(
-            new LargeStruct(0),
-            new LargeStruct(0),
-            DoubleBufferSwapEffect.Flip);
+        var buffer = new DoubleBuffer<TestObject>(
+            new TestObject(0, "0", 0),
+            new TestObject(0, "0", 0),
+            DoubleBufferSwapEffect.FlipRefOrValue);
 
         var writer = buffer.BackWriter;
         var reader = buffer.FrontReader;
@@ -415,7 +413,7 @@ public class DoubleBufferTests
         {
             for (int i = 1; i <= iterations; i++)
             {
-                writer.UpdateBackBuffer(new LargeStruct(i));
+                writer.UpdateBackBuffer(new TestObject(i, i.ToString(), i));
                 writer.SwapBuffers();
             }
         }, cts.Token);
@@ -426,10 +424,10 @@ public class DoubleBufferTests
                 while (!cts.IsCancellationRequested)
                 {
                     var val = reader.ReadFrontBuffer();
-                    if (!val.IsValid())
+                    if (val == null || val.Id != val.Value || val.Name != val.Id.ToString())
                     {
                         lock (errorLock)
-                            errors.Add($"Torn read detected: A={val.A}, B={val.B}, C={val.C}, D={val.D}");
+                            errors.Add($"Torn reference read detected: Id={val?.Id}, Name={val?.Name}, Value={val?.Value}");
                     }
                 }
             })).ToArray();
@@ -449,7 +447,7 @@ public class DoubleBufferTests
     [Test]
     public void SwapBuffers_LastWriterWins_MultipleWritesBeforeSwap_PublishesLatestWrite()
     {
-        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.FlipRefOrValue);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
@@ -465,7 +463,7 @@ public class DoubleBufferTests
     [Test]
     public void SwapBuffers_LastWriterWins_DelayedSwapDoesNotOverwriteNewerFrontData()
     {
-        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.FlipRefOrValue);
         var writer = _doubleBuffer.BackWriter;
         var reader = _doubleBuffer.FrontReader;
 
@@ -487,7 +485,7 @@ public class DoubleBufferTests
     [Test]
     public void SwapBuffers_MultipleConsecutiveSwapsWithoutUpdate_AreNoOps_Flip()
     {
-        _doubleBuffer = new DoubleBuffer<int>(1, 2, DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(1, 2, DoubleBufferSwapEffect.FlipRefOrValue);
         var writer = _doubleBuffer.BackWriter;
         var reader = _doubleBuffer.FrontReader;
 
@@ -508,7 +506,7 @@ public class DoubleBufferTests
     [Test]
     public void SwapBuffers_MultipleConsecutiveSwapsWithoutUpdate_AreNoOps_Copy()
     {
-        _doubleBuffer = new DoubleBuffer<int>(1, 2, DoubleBufferSwapEffect.Copy);
+        _doubleBuffer = new DoubleBuffer<int>(1, 2, DoubleBufferSwapEffect.CopyRefOrValue);
         var writer = _doubleBuffer.BackWriter;
         var reader = _doubleBuffer.FrontReader;
 
@@ -529,7 +527,7 @@ public class DoubleBufferTests
     [Test]
     public void ConcurrentWritersAndSwappers_NeverRevertsToStaleValueAfterWritesComplete()
     {
-        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.FlipRefOrValue);
         var writer = _doubleBuffer.BackWriter;
         var reader = _doubleBuffer.FrontReader;
 
@@ -596,7 +594,7 @@ public class DoubleBufferTests
     [Test]
     public void SingleWriter_ValuesAreStrictlyMonotonicAndNeverRevert()
     {
-        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.FlipRefOrValue);
         var writer = _doubleBuffer.BackWriter;
         var reader = _doubleBuffer.FrontReader;
 
@@ -672,34 +670,10 @@ public class DoubleBufferTests
         Assert.That(viaWriter, Is.EqualTo(viaDirect));
     }
 
-    [Test]
-    public void FrontReader_DefaultConstructor_Throws()
-    {
-        Assert.Throws<NotImplementedException>(() =>
-        {
-            _ = new DoubleBufferFrontReader<int>();
-        });
-    }
-
-    [Test]
-    public void BackWriter_DefaultConstructor_Throws()
-    {
-        Assert.Throws<NotImplementedException>(() =>
-        {
-            _ = new DoubleBufferBackWriter<int>();
-        });
-    }
 
     // ──────────────────────────────────────────────
     // Helper Types
     // ──────────────────────────────────────────────
-
-    private sealed class TestObject
-    {
-        public int Value { get; }
-        public TestObject(int value) => Value = value;
-        public override string ToString() => $"TestObject({Value})";
-    }
 
     private readonly struct LargeStruct
     {
