@@ -1,21 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <LangVersion>13</LangVersion>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>0.4</Version>
         <Title>Buffering</Title>
+        <Authors>Grovre</Authors>
         <Description>Efficient double buffering functionality for any system inspired by the DirectX swap chain</Description>
-        <Copyright>MIT</Copyright>
+        <PackageProjectUrl>https://github.com/Grovre/Buffering</PackageProjectUrl>
         <RepositoryUrl>https://github.com/Grovre/Buffering</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
+        <PackageTags>buffering;double-buffering;swap-chain;concurrency;threading;lock;performance;aot</PackageTags>
+        <PackageOutputPath>$(OutputPath)</PackageOutputPath>
+        <Copyright>© 2026 Grovre</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Authors>Grovre</Authors>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+        <Version>0.4.0</Version>
+        <LangVersion>latestmajor</LangVersion>
         
         <PackageReleaseNotes>Heavily refactored the library to make usage as simple as possible and removed copy swap effect. Previously, a no-cost implementation allowed the double buffer to use all swap effects. However, flipping is much faster than copying, and copying isn't necessary as the user can track the variable the back buffer is pulling from. Removing copying also allowed serious simplification.</PackageReleaseNotes>
     </PropertyGroup>
@@ -25,7 +29,7 @@
       <IsTrimmable>True</IsTrimmable>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0|AnyCPU'">
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0|AnyCPU'">
       <IsAotCompatible>True</IsAotCompatible>
       <IsTrimmable>True</IsTrimmable>
     </PropertyGroup>
@@ -35,13 +39,20 @@
       <IsTrimmable>True</IsTrimmable>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0|AnyCPU'">
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0|AnyCPU'">
       <IsAotCompatible>True</IsAotCompatible>
       <IsTrimmable>True</IsTrimmable>
     </PropertyGroup>
     
     <ItemGroup>
-        <None Include="$(SolutionDir)README.md" Pack="true" PackagePath="\" />
+        <None Include="..\README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Testing" />
     </ItemGroup>
 
 </Project>
