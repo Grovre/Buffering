@@ -5,30 +5,45 @@ using System.Numerics;
 using Buffering.DoubleBuffering;
 using Buffering.Locking.Locks;
 
-var db = new DoubleBuffer<object>(
+var db = new DoubleBuffer<Guid>(
+    Guid.Empty,
+    Guid.Empty,
     new SystemThreadingLock(),
     DoubleBufferSwapEffect.Flip);
 
 using var cts = new CancellationTokenSource(10_000);
 
-var bufferUpdateTask = new TaskFactory(TaskCreationOptions.LongRunning, 0).StartNew(() =>
+var bufferUpdateTask = Task.Run(() =>
 {
-    var token = cts.Token;
-    var writer = db.BackWriter;
-    var start = Stopwatch.GetTimestamp();
-    while (!token.IsCancellationRequested)
+    try
     {
-        //var elapsed = Stopwatch.GetElapsedTime(start);
-        Thread.Sleep(17);
-        writer.UpdateBackBuffer(null);
-        writer.SwapBuffers();
+        var ct = cts.Token;
+        var writer = db.BackWriter;
+        while (!ct.IsCancellationRequested)
+        {
+            //var elapsed = Stopwatch.GetElapsedTime(start);
+            Thread.Sleep(1000);
+            writer.UpdateBackBuffer(Guid.CreateVersion7());
+            writer.SwapBuffers();
+        }
     }
-});
+    catch (OperationCanceledException) when (cts.IsCancellationRequested)
+    {
+        // This is fine
+    }
+}, cts.Token);
 
 var reader = db.FrontReader;
+var lastVersion = 0;
 while (!bufferUpdateTask.IsCompleted)
 {
-    Thread.Sleep(990); // Simulate work
-    reader.ReadFrontBuffer(out var rsc, out var rscInfo).Dispose();
-    Console.WriteLine($"{rscInfo.Id:N0}: {rsc} : {rscInfo}");
+    Thread.Sleep(100); // Simulate work
+    
+    var guid = reader.ReadFrontBuffer(out var version);
+    
+    if (lastVersion == version)
+        continue;
+    
+    lastVersion = version;
+    Console.WriteLine(guid);
 }

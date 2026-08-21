@@ -11,5 +11,11 @@ public enum DoubleBufferSwapEffect
     /// Back buffer will receive what was in the front buffer. This can either be discarded or used for the next
     /// resource update unless the front buffer was using the initial resource object from initialization.
     /// </summary>
-    Flip
+    Flip,
+
+    /// <summary>
+    /// Copies the content of the back buffer to the front buffer without flipping the underlying resources.
+    /// Useful in scenarios where the content of the back buffer needs to persist across multiple updates.
+    /// </summary>
+    Copy
 }

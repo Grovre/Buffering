@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using Buffering.BufferResources;
 using Buffering.Locking;
 
 namespace Buffering.DoubleBuffering;
@@ -11,12 +10,8 @@ namespace Buffering.DoubleBuffering;
 /// <typeparam name="T">Value type in the buffer</typeparam>
 public class DoubleBuffer<T>
 {
-    private StrongBox<T> _rsc0; // front
-    private bool _frontUpdated = false;
-    private StrongBox<T> _rsc1; // back
-    private bool _backUpdated = false;
-    private BufferedResourceInfo _frontInfo;
-    private readonly IResourceLock _lock;
+    private DoubleBufferFrame<T> _frame;
+    private readonly IResourceLock _lockImpl;
     private readonly DoubleBufferSwapEffect _swapEffect;
 
     /// <summary>
@@ -35,12 +30,10 @@ public class DoubleBuffer<T>
     /// </summary>
     /// <param name="lockImpl">Lock implementation to use</param>
     /// <param name="swapEffect">Swap effect to use</param>
-    public DoubleBuffer(IResourceLock lockImpl, DoubleBufferSwapEffect swapEffect)
+    public DoubleBuffer(T initialFrontValue, T initialBackValue, IResourceLock lockImpl, DoubleBufferSwapEffect swapEffect)
     {
-        _rsc0 = new();
-        _rsc1 = new();
-        _frontInfo = default;
-        _lock = lockImpl.Copy();
+        _frame = new DoubleBufferFrame<T>(initialFrontValue, initialBackValue, 0);
+        _lockImpl = lockImpl;
         _swapEffect = swapEffect;
     }
     
@@ -51,12 +44,11 @@ public class DoubleBuffer<T>
     /// <param name="rsc">Ref variable to read the buffer to</param>
     /// <param name="info">Minimal information about the current front buffer object</param>
     /// <returns>ResourceLockHandle to be disposed of immediately after reading/writing the buffer. This should be done ASAP</returns>
-    internal ResourceLockHandle ReadFrontBuffer(out T rsc, out BufferedResourceInfo info)
+    internal T ReadFrontBuffer(out int version)
     {
-        var hlock = _lock.Lock(ResourceAccessFlags.Read);
-        rsc = _rsc0.Value!;
-        info = _frontInfo;
-        return hlock;
+        using var scope = _lockImpl.Lock(ResourceAccessFlags.Read);
+        version = _frame.Version;
+        return _frame.Front;
     }
 
     /// <summary>
@@ -67,21 +59,20 @@ public class DoubleBuffer<T>
     /// </summary>
     internal void UpdateBackBuffer(in T value)
     {
-        _rsc1.Value = value;
-        _backUpdated = true;
+        using var scope = _lockImpl.Lock(ResourceAccessFlags.Write);
+        _frame.Back = value;
+        _frame.Version++;
     }
+
     /// <summary>
     /// Reads the back buffer and returns a reference to it.
     /// </summary>
     /// <returns>A reference to the back buffer</returns>
     /// <exception cref="NotSupportedException">When the front buffer has not ben initially set for a reference return</exception>
-    internal ref T ReadBackBuffer()
+    internal T ReadBackBuffer()
     {
-        if (!_frontUpdated || !_backUpdated)
-            throw new NotSupportedException(
-                "A buffer has not been initialized for a reference return");
-
-        return ref _rsc1.Value!;
+        using var scope = _lockImpl.Lock(ResourceAccessFlags.Read);
+        return _frame.Back;
     }
 
     /// <summary>
@@ -94,24 +85,22 @@ public class DoubleBuffer<T>
     /// <exception cref="NotSupportedException">Unknown/unsupported swap effect</exception>
     internal void SwapBuffers()
     {
-        var nextInfo = BufferedResourceInfo.PrepareNextInfo(_frontInfo, true);
-        
+        using var scope = _lockImpl.Lock(ResourceAccessFlags.Write);
         switch (_swapEffect)
         {
-            case DoubleBufferSwapEffect.Flip:
-                var t = _rsc0;
-                var hlock1 = _lock.Lock(ResourceAccessFlags.Write);
-                _rsc0 = _rsc1;
-                _frontInfo = nextInfo;
-                hlock1.Dispose(); // Quick release
-                _rsc1 = t;
-
-                (_backUpdated, _frontUpdated) = (_frontUpdated, _backUpdated);
+            case DoubleBufferSwapEffect.Copy:
+                // Front becomes the back; back keeps its own reference.
+                // Both slots point to the same buffer after the swap.
+                _frame.Front = _frame.Back;
                 break;
-            
+
+            case DoubleBufferSwapEffect.Flip:
+                // Front and back exchange references.
+                (_frame.Front, _frame.Back) = (_frame.Back, _frame.Front);
+                break;
+
             default:
-                throw new NotSupportedException(
-                    "Unsupported swap effect");
+                throw new NotSupportedException($"Unsupported swap effect: {_swapEffect}");
         }
     }
 }

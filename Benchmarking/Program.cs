@@ -12,22 +12,25 @@ namespace Benchmarking
     public class Benchmarks
     {
         private const int Len = 100_000;
-        private int[] _heap = new int[Len];
         private Random _rand = new();
         private Consumer _c = new();
 
         [Benchmark]
         public void HeapWriting()
         {
-            for (var i = 0; i < _heap.Length; i++)
-                _heap[i] = _rand.Next();
+            var heap = new int[Len];
+            
+            for (var i = 0; i < heap.Length; i++)
+                heap[i] = _rand.Next();
         }
 
         [Benchmark]
         public void HeapReading()
         {
-            for (var i = 0; i < _heap.Length; i++)
-                _c.Consume(_heap[i]);
+            var heap = new int[Len];
+            
+            for (var i = 0; i < heap.Length; i++)
+                _c.Consume(heap[i]);
         }
 
         [Benchmark]

@@ -31,13 +31,13 @@ public readonly struct DoubleBufferBackWriter<T>
     /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.UpdateBackBuffer"/>
     public void UpdateBackBuffer(in T value)
     {
-        _doubleBuffer.UpdateBackBuffer(value);
+        _doubleBuffer.UpdateBackBuffer(in value);
     }
 
     /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.ReadBackBuffer"/>
-    public ref T ReadBackBuffer()
+    public T ReadBackBuffer()
     {
-        return ref _doubleBuffer.ReadBackBuffer();
+        return _doubleBuffer.ReadBackBuffer();
     }
 
     /// <inheritdoc cref="M:Buffering.DoubleBuffering.DoubleBuffer`1.SwapBuffers"/>
