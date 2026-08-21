@@ -19,7 +19,6 @@ public class DoubleBufferTests
         _doubleBuffer = new DoubleBuffer<int>(
             initialFrontValue: 0,
             initialBackValue: 0,
-            lockImpl: new NoLock(),
             swapEffect: DoubleBufferSwapEffect.Flip);
 
         _backWriter = _doubleBuffer.BackWriter;
@@ -33,10 +32,9 @@ public class DoubleBufferTests
     [Test]
     public void ReadFrontBuffer_ReturnsInitialValue_BeforeAnySwap()
     {
-        var value = _frontReader.ReadFrontBuffer(out var version);
+        var value = _frontReader.ReadFrontBuffer();
 
         Assert.That(value, Is.EqualTo(0));
-        Assert.That(version, Is.EqualTo(0));
     }
 
     [Test]
@@ -45,7 +43,7 @@ public class DoubleBufferTests
         _backWriter.UpdateBackBuffer(42);
         _backWriter.SwapBuffers();
 
-        var value = _frontReader.ReadFrontBuffer(out _);
+        var value = _frontReader.ReadFrontBuffer();
 
         Assert.That(value, Is.EqualTo(42));
     }
@@ -54,28 +52,28 @@ public class DoubleBufferTests
     public void SwapBuffers_Flip_ExchangesFrontAndBack()
     {
         // Start: front=10, back=20
-        _doubleBuffer = new DoubleBuffer<int>(10, 20, new NoLock(), DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(10, 20, DoubleBufferSwapEffect.Flip);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
         _backWriter.SwapBuffers();
 
         // After flip: front=20, back=10
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(20));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(20));
         Assert.That(_backWriter.ReadBackBuffer(), Is.EqualTo(10));
     }
 
     [Test]
     public void SwapBuffers_Copy_FrontGetsBack_BackUnchanged()
     {
-        _doubleBuffer = new DoubleBuffer<int>(10, 20, new NoLock(), DoubleBufferSwapEffect.Copy);
+        _doubleBuffer = new DoubleBuffer<int>(10, 20, DoubleBufferSwapEffect.Copy);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
         _backWriter.SwapBuffers();
 
         // After copy: front=20, back=20
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(20));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(20));
         Assert.That(_backWriter.ReadBackBuffer(), Is.EqualTo(20));
     }
 
@@ -85,15 +83,20 @@ public class DoubleBufferTests
         // Start: front=0, back=0
         _backWriter.UpdateBackBuffer(42);
         _backWriter.SwapBuffers();
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(42));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(42));
 
         _backWriter.UpdateBackBuffer(84);
         _backWriter.SwapBuffers();
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(84));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(84));
 
-        // Swap again without updating back — flip brings old front (42) to front
+        // Swap again without updating back — does not overwrite newer front with old data
         _backWriter.SwapBuffers();
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(42));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(84));
+
+        // Update back again and swap
+        _backWriter.UpdateBackBuffer(126);
+        _backWriter.SwapBuffers();
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(126));
     }
 
     [Test]
@@ -110,80 +113,28 @@ public class DoubleBufferTests
     public void ReadFrontBuffer_DoesNotChangeAfterBackUpdateOnly()
     {
         // front starts at 0
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(0));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(0));
 
         _backWriter.UpdateBackBuffer(999);
         // front should still be 0 — no swap occurred
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(0));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(0));
     }
 
     // ──────────────────────────────────────────────
-    // Version Tests
-    // ──────────────────────────────────────────────
-
-    [Test]
-    public void Version_StartsAtZero()
-    {
-        _frontReader.ReadFrontBuffer(out var version);
-        Assert.That(version, Is.EqualTo(0));
-    }
-
-    [Test]
-    public void Version_IncrementsOnUpdateBackBuffer()
-    {
-        _frontReader.ReadFrontBuffer(out var v0);
-
-        _backWriter.UpdateBackBuffer(1);
-        _frontReader.ReadFrontBuffer(out var v1);
-
-        _backWriter.UpdateBackBuffer(2);
-        _frontReader.ReadFrontBuffer(out var v2);
-
-        Assert.That(v1, Is.EqualTo(v0 + 1));
-        Assert.That(v2, Is.EqualTo(v1 + 1));
-    }
-
-    [Test]
-    public void Version_DoesNotIncrementOnSwapOnly()
-    {
-        _backWriter.UpdateBackBuffer(42); // version → 1
-        _frontReader.ReadFrontBuffer(out var vBeforeSwap);
-
-        _backWriter.SwapBuffers();
-        _frontReader.ReadFrontBuffer(out var vAfterSwap);
-
-        Assert.That(vAfterSwap, Is.EqualTo(vBeforeSwap));
-    }
-
-    [Test]
-    public void Version_CanDetectStaleRead()
-    {
-        _backWriter.UpdateBackBuffer(1);
-        _frontReader.ReadFrontBuffer(out var v1);
-
-        _backWriter.UpdateBackBuffer(2);
-        _backWriter.SwapBuffers();
-
-        _frontReader.ReadFrontBuffer(out var v2);
-
-        Assert.That(v2, Is.GreaterThan(v1));
-    }
-
-    // ──────────────────────────────────────────────
-// Swap Effect Edge Cases
+    // Swap Effect Edge Cases
     // ──────────────────────────────────────────────
 
     [Test]
     public void SwapBuffers_Flip_PreservesOldFrontInBack()
     {
-        _doubleBuffer = new DoubleBuffer<int>(111, 222, new NoLock(), DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(111, 222, DoubleBufferSwapEffect.Flip);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
         _backWriter.SwapBuffers();
 
         // After flip: front=222, back=111
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(222));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(222));
         Assert.That(_backWriter.ReadBackBuffer(), Is.EqualTo(111));
 
         // Update back (which was the old front=111) and swap again
@@ -191,21 +142,21 @@ public class DoubleBufferTests
         _backWriter.SwapBuffers();
 
         // After second flip: front=333, back=222
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(333));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(333));
         Assert.That(_backWriter.ReadBackBuffer(), Is.EqualTo(222));
     }
 
     [Test]
     public void SwapBuffers_Copy_FrontGetsBack_BackKeepsSameValue()
     {
-        _doubleBuffer = new DoubleBuffer<int>(111, 222, new NoLock(), DoubleBufferSwapEffect.Copy);
+        _doubleBuffer = new DoubleBuffer<int>(111, 222, DoubleBufferSwapEffect.Copy);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
         _backWriter.SwapBuffers();
 
         // After copy: front=222, back=222
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(222));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(222));
         Assert.That(_backWriter.ReadBackBuffer(), Is.EqualTo(222));
 
         // Update back and copy again
@@ -213,20 +164,20 @@ public class DoubleBufferTests
         _backWriter.SwapBuffers();
 
         // After second copy: front=333, back=333
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(333));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(333));
         Assert.That(_backWriter.ReadBackBuffer(), Is.EqualTo(333));
     }
 
     [Test]
     public void SwapBuffers_Copy_ThenFlip_WorksCorrectly()
     {
-        _doubleBuffer = new DoubleBuffer<int>(100, 200, new NoLock(), DoubleBufferSwapEffect.Copy);
+        _doubleBuffer = new DoubleBuffer<int>(100, 200, DoubleBufferSwapEffect.Copy);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
         // Copy: front=200, back=200
         _backWriter.SwapBuffers();
-        Assert.That(_frontReader.ReadFrontBuffer(out _), Is.EqualTo(200));
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(200));
 
         // Update back=300
         _backWriter.UpdateBackBuffer(300);
@@ -248,17 +199,17 @@ public class DoubleBufferTests
         var backObj = new TestObject(2);
 
         var buffer = new DoubleBuffer<TestObject>(
-            frontObj, backObj, new NoLock(), DoubleBufferSwapEffect.Flip);
+            frontObj, backObj, DoubleBufferSwapEffect.Flip);
         var frontReader = buffer.FrontReader;
         var backWriter = buffer.BackWriter;
 
         // Before swap: front=frontObj
-        Assert.That(frontReader.ReadFrontBuffer(out _), Is.SameAs(frontObj));
+        Assert.That(frontReader.ReadFrontBuffer(), Is.SameAs(frontObj));
 
         backWriter.SwapBuffers();
 
         // After flip: front=backObj
-        Assert.That(frontReader.ReadFrontBuffer(out _), Is.SameAs(backObj));
+        Assert.That(frontReader.ReadFrontBuffer(), Is.SameAs(backObj));
         Assert.That(backWriter.ReadBackBuffer(), Is.SameAs(frontObj));
     }
 
@@ -269,7 +220,7 @@ public class DoubleBufferTests
         var newBack = new TestObject(42);
 
         var buffer = new DoubleBuffer<TestObject>(
-            new TestObject(1), initialBack, new NoLock(), DoubleBufferSwapEffect.Flip);
+            new TestObject(1), initialBack, DoubleBufferSwapEffect.Flip);
         var backWriter = buffer.BackWriter;
 
         backWriter.UpdateBackBuffer(newBack);
@@ -284,8 +235,7 @@ public class DoubleBufferTests
     [Test]
     public void ConcurrentUpdatesAndSwaps_NoCorruptionOrDeadlock()
     {
-        // Use a real lock for concurrency tests — NoLock is unsafe for concurrent access
-        _doubleBuffer = new DoubleBuffer<int>(0, 0, new MultipleReaderLock(), DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
@@ -318,7 +268,7 @@ public class DoubleBufferTests
                 int lastSeen = 0;
                 while (!cts.IsCancellationRequested)
                 {
-                    var value = _frontReader.ReadFrontBuffer(out _);
+                    var value = _frontReader.ReadFrontBuffer();
                     // Front should always be a value that was written (0..iterations)
                     // or the initial 0. It should never be garbage or out of range.
                     Assert.That(value, Is.InRange(0, iterations),
@@ -344,15 +294,16 @@ public class DoubleBufferTests
         // After all writes complete, the last swapped value should be visible
         // The writer wrote 1..10000 and swapped after each.
         // After the last swap, front = 10000 (the last value written to back before the last swap).
-        var finalValue = _frontReader.ReadFrontBuffer(out _);
+        var finalValue = _frontReader.ReadFrontBuffer();
         Assert.That(finalValue, Is.EqualTo(10000));
     }
 
     [Test]
-    public void ConcurrentMultipleWriters_NoLostUpdates_WithLock()
+    public void ConcurrentMultipleWriters_NoLostUpdates_LockFree()
     {
-        _doubleBuffer = new DoubleBuffer<int>(0, 0, new MultipleReaderLock(), DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
         _backWriter = _doubleBuffer.BackWriter;
+        _frontReader = _doubleBuffer.FrontReader;
 
         const int writerCount = 4;
         const int iterationsPerWriter = 5_000;
@@ -376,15 +327,14 @@ public class DoubleBufferTests
 
         // Swap and verify front gets that value
         _backWriter.SwapBuffers();
-        var frontValue = _frontReader.ReadFrontBuffer(out _);
+        var frontValue = _frontReader.ReadFrontBuffer();
         Assert.That(frontValue, Is.EqualTo(backValue));
     }
 
     [Test]
     public void ConcurrentReaders_NeverObserveTornState()
     {
-        _doubleBuffer = new DoubleBuffer<int>(
-            0, 0, new MultipleReaderLock(), DoubleBufferSwapEffect.Flip);
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
         _backWriter = _doubleBuffer.BackWriter;
         _frontReader = _doubleBuffer.FrontReader;
 
@@ -409,7 +359,7 @@ public class DoubleBufferTests
             {
                 while (!cts.IsCancellationRequested)
                 {
-                    var value = _frontReader.ReadFrontBuffer(out _);
+                    var value = _frontReader.ReadFrontBuffer();
                     if (value < 0 || value > iterations)
                     {
                         lock (errorLock)
@@ -426,6 +376,274 @@ public class DoubleBufferTests
             errors.Count > 0 ? string.Join(", ", errors) : "No errors");
     }
 
+    [Test]
+    public void Constructor_WithObsoleteLockImpl_IgnoredAndWorksCorrectly()
+    {
+#pragma warning disable CS0618 // Type or member is obsolete
+        var buffer = new DoubleBuffer<int>(10, 20, new NoLock(), DoubleBufferSwapEffect.Flip);
+#pragma warning restore CS0618
+        var reader = buffer.FrontReader;
+        var writer = buffer.BackWriter;
+
+        Assert.That(reader.ReadFrontBuffer(), Is.EqualTo(10));
+        Assert.That(writer.ReadBackBuffer(), Is.EqualTo(20));
+
+        writer.UpdateBackBuffer(99);
+        writer.SwapBuffers();
+
+        Assert.That(reader.ReadFrontBuffer(), Is.EqualTo(99));
+        Assert.That(writer.ReadBackBuffer(), Is.EqualTo(10));
+    }
+
+    [Test]
+    public void ConcurrentReadersAndWriters_WithLargeStruct_NeverObserveTornState()
+    {
+        var buffer = new DoubleBuffer<LargeStruct>(
+            new LargeStruct(0),
+            new LargeStruct(0),
+            DoubleBufferSwapEffect.Flip);
+
+        var writer = buffer.BackWriter;
+        var reader = buffer.FrontReader;
+
+        const int iterations = 10_000;
+        var cts = new CancellationTokenSource();
+        var errors = new List<string>();
+        var errorLock = new object();
+
+        var writerTask = Task.Run(() =>
+        {
+            for (int i = 1; i <= iterations; i++)
+            {
+                writer.UpdateBackBuffer(new LargeStruct(i));
+                writer.SwapBuffers();
+            }
+        }, cts.Token);
+
+        var readerTasks = Enumerable.Range(0, 4).Select(_ =>
+            Task.Run(() =>
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    var val = reader.ReadFrontBuffer();
+                    if (!val.IsValid())
+                    {
+                        lock (errorLock)
+                            errors.Add($"Torn read detected: A={val.A}, B={val.B}, C={val.C}, D={val.D}");
+                    }
+                }
+            })).ToArray();
+
+        writerTask.Wait();
+        cts.Cancel();
+        Task.WaitAll(readerTasks, TimeSpan.FromSeconds(5));
+
+        Assert.That(errors, Is.Empty,
+            errors.Count > 0 ? string.Join(", ", errors) : "No torn reads");
+    }
+
+    // ──────────────────────────────────────────────
+    // Last-Writer-Wins & Swap Idempotence Tests
+    // ──────────────────────────────────────────────
+
+    [Test]
+    public void SwapBuffers_LastWriterWins_MultipleWritesBeforeSwap_PublishesLatestWrite()
+    {
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
+        _backWriter = _doubleBuffer.BackWriter;
+        _frontReader = _doubleBuffer.FrontReader;
+
+        _backWriter.UpdateBackBuffer(10);
+        _backWriter.UpdateBackBuffer(20);
+        _backWriter.UpdateBackBuffer(30);
+
+        _backWriter.SwapBuffers();
+
+        Assert.That(_frontReader.ReadFrontBuffer(), Is.EqualTo(30));
+    }
+
+    [Test]
+    public void SwapBuffers_LastWriterWins_DelayedSwapDoesNotOverwriteNewerFrontData()
+    {
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
+        var writer = _doubleBuffer.BackWriter;
+        var reader = _doubleBuffer.FrontReader;
+
+        // Writer 1 writes and swaps
+        writer.UpdateBackBuffer(100);
+        writer.SwapBuffers();
+        Assert.That(reader.ReadFrontBuffer(), Is.EqualTo(100));
+
+        // Writer 2 writes newer data and swaps
+        writer.UpdateBackBuffer(200);
+        writer.SwapBuffers();
+        Assert.That(reader.ReadFrontBuffer(), Is.EqualTo(200));
+
+        // Stale swap without update should NOT overwrite newer data 200 with older 100
+        writer.SwapBuffers();
+        Assert.That(reader.ReadFrontBuffer(), Is.EqualTo(200));
+    }
+
+    [Test]
+    public void SwapBuffers_MultipleConsecutiveSwapsWithoutUpdate_AreNoOps_Flip()
+    {
+        _doubleBuffer = new DoubleBuffer<int>(1, 2, DoubleBufferSwapEffect.Flip);
+        var writer = _doubleBuffer.BackWriter;
+        var reader = _doubleBuffer.FrontReader;
+
+        // First swap publishes initial back (2) to front
+        writer.SwapBuffers();
+        Assert.That(reader.ReadFrontBuffer(), Is.EqualTo(2));
+        Assert.That(writer.ReadBackBuffer(), Is.EqualTo(1));
+
+        // Subsequent swaps without update are no-ops and preserve front value
+        for (int i = 0; i < 5; i++)
+        {
+            writer.SwapBuffers();
+            Assert.That(reader.ReadFrontBuffer(), Is.EqualTo(2));
+            Assert.That(writer.ReadBackBuffer(), Is.EqualTo(1));
+        }
+    }
+
+    [Test]
+    public void SwapBuffers_MultipleConsecutiveSwapsWithoutUpdate_AreNoOps_Copy()
+    {
+        _doubleBuffer = new DoubleBuffer<int>(1, 2, DoubleBufferSwapEffect.Copy);
+        var writer = _doubleBuffer.BackWriter;
+        var reader = _doubleBuffer.FrontReader;
+
+        // First swap copies initial back (2) to front
+        writer.SwapBuffers();
+        Assert.That(reader.ReadFrontBuffer(), Is.EqualTo(2));
+        Assert.That(writer.ReadBackBuffer(), Is.EqualTo(2));
+
+        // Subsequent swaps without update are no-ops
+        for (int i = 0; i < 5; i++)
+        {
+            writer.SwapBuffers();
+            Assert.That(reader.ReadFrontBuffer(), Is.EqualTo(2));
+            Assert.That(writer.ReadBackBuffer(), Is.EqualTo(2));
+        }
+    }
+
+    [Test]
+    public void ConcurrentWritersAndSwappers_NeverRevertsToStaleValueAfterWritesComplete()
+    {
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
+        var writer = _doubleBuffer.BackWriter;
+        var reader = _doubleBuffer.FrontReader;
+
+        const int writerCount = 4;
+        const int iterationsPerWriter = 5_000;
+        var cts = new CancellationTokenSource();
+        var errors = new List<string>();
+        var errorLock = new object();
+
+        // Multiple writer threads each updating and swapping
+        var writerTasks = Enumerable.Range(0, writerCount).Select(wId =>
+            Task.Run(() =>
+            {
+                for (int i = 1; i <= iterationsPerWriter; i++)
+                {
+                    writer.UpdateBackBuffer(wId * iterationsPerWriter + i);
+                    writer.SwapBuffers();
+                }
+            })).ToArray();
+
+        // Multiple reader threads verifying valid in-range values
+        var readerTasks = Enumerable.Range(0, 4).Select(_ =>
+            Task.Run(() =>
+            {
+                while (!cts.IsCancellationRequested)
+                {
+                    var val = reader.ReadFrontBuffer();
+                    if (val < 0 || val > writerCount * iterationsPerWriter)
+                    {
+                        lock (errorLock)
+                            errors.Add($"Read out-of-range value: {val}");
+                    }
+                }
+            })).ToArray();
+
+        Task.WaitAll(writerTasks);
+        cts.Cancel();
+        Task.WaitAll(readerTasks, TimeSpan.FromSeconds(5));
+
+        Assert.That(errors, Is.Empty,
+            errors.Count > 0 ? string.Join("\n", errors.Take(10)) : "No read errors");
+
+        // After all writes finish, capture the final front buffer value
+        var finalFront = reader.ReadFrontBuffer();
+        Assert.That(finalFront, Is.InRange(1, writerCount * iterationsPerWriter));
+
+        // Subsequent redundant swaps from multiple threads must NOT overwrite or revert the final published value
+        var swapperTasks = Enumerable.Range(0, 8).Select(_ =>
+            Task.Run(() =>
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    writer.SwapBuffers();
+                }
+            })).ToArray();
+
+        Task.WaitAll(swapperTasks);
+
+        var afterRedundantSwaps = reader.ReadFrontBuffer();
+        Assert.That(afterRedundantSwaps, Is.EqualTo(finalFront),
+            "Redundant swaps must not overwrite newer front buffer data!");
+    }
+
+    [Test]
+    public void SingleWriter_ValuesAreStrictlyMonotonicAndNeverRevert()
+    {
+        _doubleBuffer = new DoubleBuffer<int>(0, 0, DoubleBufferSwapEffect.Flip);
+        var writer = _doubleBuffer.BackWriter;
+        var reader = _doubleBuffer.FrontReader;
+
+        const int iterations = 10_000;
+        var cts = new CancellationTokenSource();
+        var errors = new List<string>();
+        var errorLock = new object();
+
+        var writerTask = Task.Run(() =>
+        {
+            for (int i = 1; i <= iterations; i++)
+            {
+                writer.UpdateBackBuffer(i);
+                writer.SwapBuffers();
+                // Randomly perform redundant swaps to ensure they never revert front buffer
+                if (i % 5 == 0)
+                {
+                    writer.SwapBuffers();
+                }
+            }
+        }, cts.Token);
+
+        var readerTasks = Enumerable.Range(0, 4).Select(_ =>
+            Task.Run(() =>
+            {
+                int lastSeen = 0;
+                while (!cts.IsCancellationRequested)
+                {
+                    var val = reader.ReadFrontBuffer();
+                    if (val < lastSeen)
+                    {
+                        lock (errorLock)
+                            errors.Add($"Front buffer decreased: observed {val} after {lastSeen}");
+                    }
+                    if (val > lastSeen)
+                        lastSeen = val;
+                }
+            })).ToArray();
+
+        writerTask.Wait();
+        cts.Cancel();
+        Task.WaitAll(readerTasks, TimeSpan.FromSeconds(5));
+
+        Assert.That(errors, Is.Empty,
+            errors.Count > 0 ? string.Join("\n", errors.Take(10)) : "No monotonic violations");
+    }
+
     // ──────────────────────────────────────────────
     // FrontReader / BackWriter Facade Tests
     // ──────────────────────────────────────────────
@@ -437,11 +655,10 @@ public class DoubleBufferTests
         _backWriter.SwapBuffers();
 
         // FrontReader should return the same as direct DoubleBuffer access
-        var viaReader = _frontReader.ReadFrontBuffer(out var versionViaReader);
-        var viaDirect = _doubleBuffer.ReadFrontBuffer(out var versionViaDirect);
+        var viaReader = _frontReader.ReadFrontBuffer();
+        var viaDirect = _doubleBuffer.ReadFrontBuffer();
 
         Assert.That(viaReader, Is.EqualTo(viaDirect));
-        Assert.That(versionViaReader, Is.EqualTo(versionViaDirect));
     }
 
     [Test]
@@ -482,5 +699,23 @@ public class DoubleBufferTests
         public int Value { get; }
         public TestObject(int value) => Value = value;
         public override string ToString() => $"TestObject({Value})";
+    }
+
+    private readonly struct LargeStruct
+    {
+        public readonly long A;
+        public readonly long B;
+        public readonly long C;
+        public readonly long D;
+
+        public LargeStruct(long val)
+        {
+            A = val;
+            B = val;
+            C = val;
+            D = val;
+        }
+
+        public bool IsValid() => A == B && B == C && C == D;
     }
 }

@@ -1,14 +1,10 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using System.Diagnostics;
-using System.Numerics;
 using Buffering.DoubleBuffering;
-using Buffering.Locking.Locks;
 
 var db = new DoubleBuffer<Guid>(
     Guid.Empty,
     Guid.Empty,
-    new SystemThreadingLock(),
     DoubleBufferSwapEffect.Flip);
 
 using var cts = new CancellationTokenSource(10_000);
@@ -34,16 +30,16 @@ var bufferUpdateTask = Task.Run(() =>
 }, cts.Token);
 
 var reader = db.FrontReader;
-var lastVersion = 0;
+var lastGuid = Guid.Empty;
 while (!bufferUpdateTask.IsCompleted)
 {
     Thread.Sleep(100); // Simulate work
     
-    var guid = reader.ReadFrontBuffer(out var version);
+    var guid = reader.ReadFrontBuffer();
     
-    if (lastVersion == version)
+    if (lastGuid == guid)
         continue;
     
-    lastVersion = version;
+    lastGuid = guid;
     Console.WriteLine(guid);
 }

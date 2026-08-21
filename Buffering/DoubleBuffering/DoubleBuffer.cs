@@ -4,14 +4,13 @@ using Buffering.Locking;
 namespace Buffering.DoubleBuffering;
 
 /// <summary>
-/// A type of buffer that minimizes locking times during front buffer updates.
-/// The back buffer should be updated concurrently with a back buffer controller.
+/// A lock-free double buffer that enables concurrent reading and writing without blocking or locks.
+/// The back buffer can be updated and swapped concurrently while readers access the front buffer.
 /// </summary>
 /// <typeparam name="T">Value type in the buffer</typeparam>
 public class DoubleBuffer<T>
 {
     private DoubleBufferFrame<T> _frame;
-    private readonly IResourceLock _lockImpl;
     private readonly DoubleBufferSwapEffect _swapEffect;
 
     /// <summary>
@@ -26,81 +25,92 @@ public class DoubleBuffer<T>
     public DoubleBufferBackWriter<T> BackWriter => new(this);
 
     /// <summary>
-    /// Constructs the double buffer accordingly.
+    /// Constructs a lock-free double buffer with the specified initial values and swap effect.
     /// </summary>
-    /// <param name="lockImpl">Lock implementation to use</param>
-    /// <param name="swapEffect">Swap effect to use</param>
-    public DoubleBuffer(T initialFrontValue, T initialBackValue, IResourceLock lockImpl, DoubleBufferSwapEffect swapEffect)
+    /// <param name="initialFrontValue">Initial value for the front buffer</param>
+    /// <param name="initialBackValue">Initial value for the back buffer</param>
+    /// <param name="swapEffect">Swap effect to use (default is Flip)</param>
+    public DoubleBuffer(T initialFrontValue, T initialBackValue, DoubleBufferSwapEffect swapEffect = DoubleBufferSwapEffect.Flip)
     {
-        _frame = new DoubleBufferFrame<T>(initialFrontValue, initialBackValue, 0);
-        _lockImpl = lockImpl;
+        _frame = new DoubleBufferFrame<T>(initialFrontValue, initialBackValue, hasPendingUpdate: true);
         _swapEffect = swapEffect;
+    }
+
+    /// <summary>
+    /// Constructs a lock-free double buffer.
+    /// </summary>
+    /// <param name="initialFrontValue">Initial value for the front buffer</param>
+    /// <param name="initialBackValue">Initial value for the back buffer</param>
+    /// <param name="lockImpl">Ignored. DoubleBuffer is entirely lock-free.</param>
+    /// <param name="swapEffect">Swap effect to use</param>
+    [Obsolete("DoubleBuffer is entirely lock-free; lockImpl is ignored.")]
+    public DoubleBuffer(T initialFrontValue, T initialBackValue, IResourceLock? lockImpl, DoubleBufferSwapEffect swapEffect = DoubleBufferSwapEffect.Flip)
+        : this(initialFrontValue, initialBackValue, swapEffect)
+    {
     }
     
     /// <summary>
-    /// Locks the front buffer and reads it.
-    /// The lock should be immediately disposed of in the same statement if T is a struct and contains no references
+    /// Reads the front buffer without locking.
     /// </summary>
-    /// <param name="rsc">Ref variable to read the buffer to</param>
-    /// <param name="info">Minimal information about the current front buffer object</param>
-    /// <returns>ResourceLockHandle to be disposed of immediately after reading/writing the buffer. This should be done ASAP</returns>
-    internal T ReadFrontBuffer(out int version)
+    /// <returns>The front buffer value</returns>
+    internal T ReadFrontBuffer()
     {
-        using var scope = _lockImpl.Lock(ResourceAccessFlags.Read);
-        version = _frame.Version;
-        return _frame.Front;
+        var frame = Volatile.Read(ref _frame);
+        return frame.Front;
     }
 
     /// <summary>
-    /// Updates the back buffer by updating the resource.
-    /// Should be called before swapping the buffers and on a dedicated back buffer thread
-    /// to maximize throughput.
-    /// The back buffer IS NOT THREAD SAFE. No locking or synchronization is done.
+    /// Updates the back buffer in a lock-free manner and marks it as pending swap.
+    /// Does not modify the front buffer.
+    /// Should be called before swapping the buffers.
     /// </summary>
+    /// <param name="value">The new value for the back buffer</param>
     internal void UpdateBackBuffer(in T value)
     {
-        using var scope = _lockImpl.Lock(ResourceAccessFlags.Write);
-        _frame.Back = value;
-        _frame.Version++;
+        DoubleBufferFrame<T> current;
+        DoubleBufferFrame<T> next;
+        do
+        {
+            current = Volatile.Read(ref _frame);
+            next = new DoubleBufferFrame<T>(current.Front, value, hasPendingUpdate: true);
+        } while (Interlocked.CompareExchange(ref _frame, next, current) != current);
     }
 
     /// <summary>
-    /// Reads the back buffer and returns a reference to it.
+    /// Reads the back buffer in a lock-free manner.
     /// </summary>
-    /// <returns>A reference to the back buffer</returns>
-    /// <exception cref="NotSupportedException">When the front buffer has not ben initially set for a reference return</exception>
+    /// <returns>The current back buffer value</returns>
     internal T ReadBackBuffer()
     {
-        using var scope = _lockImpl.Lock(ResourceAccessFlags.Read);
-        return _frame.Back;
+        var frame = Volatile.Read(ref _frame);
+        return frame.Back;
     }
 
     /// <summary>
-    /// Swaps the buffers with functionality according to the configured swap effect (default is flip).
-    /// Should be called after updating the back buffer.
-    /// All reads immediately after every swap are on the correct resource in the front buffer.
-    /// The back buffer IS NOT THREAD SAFE. No locking or synchronization is done.
-    /// This maximizes throughput out of the box.
+    /// Swaps the buffers in a lock-free, last-writer-wins manner according to the configured swap effect.
+    /// If no new update has been written to the back buffer since the last swap, the swap is a no-op to prevent overwriting newer front buffer data.
+    /// Should be called after updating the back buffer to publish the new frame to readers.
     /// </summary>
-    /// <exception cref="NotSupportedException">Unknown/unsupported swap effect</exception>
+    /// <exception cref="NotSupportedException">When an unknown/unsupported swap effect is encountered</exception>
     internal void SwapBuffers()
     {
-        using var scope = _lockImpl.Lock(ResourceAccessFlags.Write);
-        switch (_swapEffect)
+        DoubleBufferFrame<T> current;
+        DoubleBufferFrame<T> next;
+        do
         {
-            case DoubleBufferSwapEffect.Copy:
-                // Front becomes the back; back keeps its own reference.
-                // Both slots point to the same buffer after the swap.
-                _frame.Front = _frame.Back;
-                break;
+            current = Volatile.Read(ref _frame);
+            if (!current.HasPendingUpdate)
+            {
+                return;
+            }
 
-            case DoubleBufferSwapEffect.Flip:
-                // Front and back exchange references.
-                (_frame.Front, _frame.Back) = (_frame.Back, _frame.Front);
-                break;
-
-            default:
-                throw new NotSupportedException($"Unsupported swap effect: {_swapEffect}");
-        }
+            var (newFront, newBack) = _swapEffect switch
+            {
+                DoubleBufferSwapEffect.Copy => (current.Back, current.Back),
+                DoubleBufferSwapEffect.Flip => (current.Back, current.Front),
+                _ => throw new NotSupportedException($"Unsupported swap effect: {_swapEffect}")
+            };
+            next = new DoubleBufferFrame<T>(newFront, newBack, hasPendingUpdate: false);
+        } while (Interlocked.CompareExchange(ref _frame, next, current) != current);
     }
 }
