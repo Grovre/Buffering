@@ -53,6 +53,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="Testing" />
+        <InternalsVisibleTo Include="Benchmarking" />
     </ItemGroup>
 
 </Project>
