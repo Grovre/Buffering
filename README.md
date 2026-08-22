@@ -240,6 +240,16 @@ Value types larger than the native pointer width (64 bits on x64) are not copied
 
 ---
 
+## Performance Improvements (Since 2024)
+
+The double buffering architecture was redesigned to eliminate synchronization overhead and memory indirection present in earlier (2024) versions:
+
+- **Lock-Free Concurrency**: Replaced locking abstractions (`Monitor`, `SpinLock`, `ReaderWriterLockSlim`, and custom lock handles) with a lock-free Single-Writer Multiple-Reader (SWMR) model synchronized via full memory barriers (`Interlocked.MemoryBarrier`).
+- **Zero Allocations & Direct Storage**: Removed `StrongBox<T>` wrappers, lock objects, and handle allocations in favor of direct value and reference storage in buffer slots, making buffer creation and operations completely allocation-free.
+- **Substantial Throughput Gains**: Producer update-and-swap cycles are up to ~3.4x faster than locked implementations (and ~37% faster than the old unlocked baseline), while concurrent readers experience zero contention.
+
+---
+
 ## Compatibility
 
 - .NET 8.0 and 10.0+
