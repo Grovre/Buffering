@@ -37,7 +37,11 @@
 - Introduced decoupled, lightweight handle types: DoubleBufferFrontReader&lt;T&gt; and DoubleBufferBackWriter&lt;T&gt;.
 - Configurable swap effects via DoubleBufferSwapEffect (FlipRefOrValue for zero-allocation recycling; CopyRefOrValue for persistent baseline state).
 - Built-in pending update detection to avoid redundant swap operations.
-- Full Native AOT and Trimming support across .NET 8.0 and .NET 10.0.</PackageReleaseNotes>
+- Full Native AOT and Trimming support on .NET 10.0+.</PackageReleaseNotes>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <DocumentationFile>bin\Release\Buffering.xml</DocumentationFile>
     </PropertyGroup>
     
     <ItemGroup>

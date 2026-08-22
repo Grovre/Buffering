@@ -1,7 +1,7 @@
 # Buffering
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%2010.0-purple.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![AOT Compatible](https://img.shields.io/badge/AOT-Compatible-success.svg)](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
 [![Lock-Free](https://img.shields.io/badge/Concurrency-Lock--Free%20SWMR-brightgreen.svg)](#concurrency-model)
 [![NuGet](https://img.shields.io/nuget/v/Buffering.svg)](https://www.nuget.org/packages/Buffering)
@@ -252,6 +252,6 @@ The double buffering architecture was redesigned to eliminate synchronization ov
 
 ## Compatibility
 
-- .NET 8.0 and 10.0+
+- .NET 10.0+
 - Native AOT and trimming compatible
 - MIT licensed
