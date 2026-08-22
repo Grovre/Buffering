@@ -6,3 +6,4 @@ riderModule.iml
 /Buffering.sln.DotSettings.user
 /.vs/*
 *.user
+BenchmarkDotNet.Artifacts/
